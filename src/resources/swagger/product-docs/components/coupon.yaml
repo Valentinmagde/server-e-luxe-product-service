@@ -1,0 +1,56 @@
+components:
+  schemas:
+    Coupon:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: object
+          properties:
+            en:
+              type: string
+              description: The coupon's name.
+            fr:
+              type: string
+              description: The coupon's name.
+        logo:
+          type: string
+          description: The coupon's logo.
+        coupon_code:
+          type: number
+          description: The coupon's code.
+        start_time:
+          type: string
+          description: The coupon's start time.
+          format: date-time
+        end_time:
+          type: string
+          description: The coupon's end time.
+          format: date-time
+        discount_type:
+          type: object
+          properties:
+            type:
+              type: string
+              description: The discount type.
+            value:
+              type: number
+              description: The discount value .
+        minimum_amount:
+          type: number
+          description: The coupon's minimum amount.
+        product_type:
+          type: string
+          description: The coupon's product type.
+        status:
+          type: string
+          lowercase: true
+          enum: ["show", "hide"]
+          default: "show"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time

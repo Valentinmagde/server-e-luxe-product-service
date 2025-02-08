@@ -1,0 +1,59 @@
+components:
+  schemas:
+    Attribute:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: object
+          properties:
+            en:
+              type: string
+              description: The coupon's title.
+            fr:
+              type: string
+              description: The coupon's title.
+        name:
+          type: object
+          properties:
+            en:
+              type: string
+              description: The coupon's name.
+            fr:
+              type: string
+              description: The coupon's name.
+        option:
+          type: string
+          lowercase: true
+          enum: ["Dropdown", "Radio", "Checkbox"]
+          default: "Dropdown"
+        variants: 
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: The variant name.
+              status:
+                type: string
+                lowercase: true
+                enum: ["show", "hide"]
+                default: "show"
+        type:
+          type: string
+          lowercase: true
+          enum: ["attribute", "extra"]
+          default: "attribute"
+        status:
+          type: string
+          lowercase: true
+          enum: ["show", "hide"]
+          default: "show"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time

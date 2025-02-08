@@ -1,0 +1,24 @@
+components:
+  schemas:
+    Tag:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          description: The tag's name.
+        slug:
+          type: string
+          description: The tag's slug.
+        products:
+          type: array
+          items:
+            type: string
+            description: tag's product
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time

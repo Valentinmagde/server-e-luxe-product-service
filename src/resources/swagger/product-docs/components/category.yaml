@@ -1,0 +1,38 @@
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          description: The category's name.
+        description:
+          type: string
+          description: The category's description.
+        parentName:
+          type: string
+          description: The category's parent name.
+        icon:
+          type: string
+          description: The category's imagde.
+        status:
+          type: string
+          description: The language's status.
+          enum: ["show", "hide"]
+        slug:
+          type: string
+          description: The category's slug.
+        products:
+          type: array
+          items:
+            type: string
+            description: category's product
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+

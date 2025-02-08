@@ -1,0 +1,53 @@
+components:
+  schemas:
+    Extra:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: object
+          properties:
+            en:
+              type: string
+              description: The extra's title.
+            fr:
+              type: string
+              description: The extra's title.
+        name:
+          type: object
+          properties:
+            en:
+              type: string
+              description: The extra's name.
+            fr:
+              type: string
+              description: The extra's name.
+        option:
+          type: object
+        related_product:
+          type: array
+          items:
+            type: string
+            description: The related product.
+        grouped_items: 
+          type: array
+          items:
+            type: string
+            description: The grouped products.
+        type:
+          type: string
+          lowercase: true
+          enum: ["simple", "product", "custom", "grouped"]
+          default: "simple"
+        status:
+          type: string
+          lowercase: true
+          enum: ["show", "hide"]
+          default: "show"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time

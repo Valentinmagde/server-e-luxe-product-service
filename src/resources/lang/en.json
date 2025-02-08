@@ -1,0 +1,50 @@
+{
+	"product": {
+		"productNotFound": "Product does not exits",
+		"invalidProductId": "Invalid product id",
+		"categoryAlreadyAssigned": "This category is already assigned to this product",
+		"tagAlreadyAssigned": "This tag is already assigned to this product",
+		"notHaveThisCategory": "This product does not have this category.",
+		"notHaveThisTag": "This product does not have this tag."
+	},
+	"category": {
+		"categoryNotFound": "Category does not exits",
+		"invalidCategoryId": "Invalid category id"
+	},
+	"tag": {
+		"tagNotFound": "Tag does not exits",
+		"invalidTagId": "Invalid tag id"
+	},
+	"coupon": {
+		"couponNotFound": "Coupon does not exits",
+		"invalidCouponId": "Invalid coupon id"
+	},
+	"attribute": {
+		"attributeNotFound": "Attribute does not exits",
+		"invalidAttributeId": "Invalid attribute id"
+	},
+	"extra": {
+		"extraNotFound": "Extra does not exits",
+		"invalidExtraId": "Invalid extra id"
+	},
+	"unauthorize": {
+		"noToken": "No token",
+		"invalidToken": "Invalid token",
+		"invalidAdminToken": "Invalid admin token",
+		"invalidSellerToken": "Invalid seller token",
+		"invalidAdminOrSeller": "Invalid admin or seller token",
+		"invalidRefreshToken": "Invalid refresh token",
+		"noRefreshToken": "No refresh token"
+	},
+	"config": {
+		"cache": {
+			"redis": {
+				"redisConnectionTo": "Redis connection to",
+				"failed": "failed"
+			}
+		}
+	},
+	"others": {
+		"routeNotFound": "Route not found"
+	}
+}

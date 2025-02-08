@@ -1,0 +1,20 @@
+import ProductType from "../product/product.type"
+
+export default interface CategoryType {
+    _id: string;
+    name: object;
+    slug: string;
+    description: object;
+    parent_id: string;
+    parent_name: string;
+    id: string;
+    icon: string;
+    image: string;
+    is_top_category: boolean;
+    status: 'show'|'hide';
+    products: Array<ProductType>;
+    children?: Array<CategoryType>;
+    created_at?: Date;
+    updated_at?: Date;
+    __v?: number;
+}

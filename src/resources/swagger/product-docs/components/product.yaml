@@ -1,0 +1,127 @@
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        _id:
+          type: string
+        sku:
+          type: string
+          description: The product's sku.
+          example: SKU0000245
+        name:
+          type: string
+          description: The product's name.
+          example: Backpack
+        vendor: 
+          type: string
+        image:
+          description: Product's image url
+          type: string
+        brand:
+          description: Product's brand
+          type: string
+        short_description:
+          description: Product's short description
+          type: string
+        description:
+          description: Product's description
+          type: string
+        price:
+          description: Product's price
+          type: number
+          example: 0.00
+        promotional_price:
+          description: Product's promotional price
+          type: number
+          example: 0.00
+        initialIn_stock:
+          description: Product's initial stock
+          type: number
+          example: 10
+        current_stock:
+          description: Product's current stock
+          type: number
+          example: 10
+        featured:
+          description: Featured product ? indicate 1 if and 0 otherwise
+          type: number
+          example: 0
+        promotional:
+          description: Promotional product ? indicate 1 if and 0 otherwise
+          type: number
+          example: 0
+        rating:
+          description: Product's rating. Value between 1 and 5
+          type: number
+          example: 0
+        numReviews:
+          description: Number of reviews
+          type: number
+          example: 0
+        reviews:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Name of reviewer
+                example: Herman
+              email:
+                type: string
+                description: Email of reviewer
+                example: reviewer@example.com
+              comment:
+                type: string
+                description: Comment of reviewer
+                example: An excellent product
+              rating:
+                type: number
+                description: Product's rating. Value between 1 and 5
+                example: 1
+        tags:
+          type: array
+          items:
+            type: string
+            description: Tag's id
+        categories:
+          type: array
+          items:
+            type: string
+            description: Category's id
+        related_products:
+          type: array
+          items:
+            type: string
+            description: Related product's id
+        store:
+          type: string
+          description: Store's id
+        shipping:
+          type: object
+          properties:
+            weight:
+              type: number
+              description: the product weight
+            dimension:
+              type: object
+              properties:
+                length:
+                  type: number
+                  description: the product length
+                width:
+                  type: number
+                  description: the product width
+                height:
+                  type: number
+                  description: the product height
+            class:
+              type: string
+              description: Shipping class
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
