@@ -286,6 +286,95 @@ class ProductRoutes {
 
             /**
              * @swagger
+             * /v1/{lang}/products/best-sellers:
+             *   get:
+             *     security:
+             *      - bearerAuth: []
+             *     tags:
+             *     - Product
+             *     operationId: bestSellers
+             *     summary: Get best sellers of month.
+             *     description: Get best sellers of monthn.
+             *     parameters:
+             *      - in: path
+             *        name: lang
+             *        schema:
+             *          type: string
+             *          example: en
+             *        required: true
+             *        description: Language for the response. Supported
+             *          languages ['en', 'fr']
+             *
+             *     responses:
+             *       200:
+             *         description: Products successfully retrieved.
+             *         content:
+             *           application/json:
+             *             schema:
+             *                type: object
+             *                properties:
+             *                  status:
+             *                    type: string
+             *                    example: Ok
+             *                  data:
+             *                    type: object
+             *                    properties:
+             *                      products:
+             *                        type: array
+             *                        items:
+             *                          $ref: '#/components/schemas/Product'
+             *                      previousPage:
+             *                        type: number
+             *                        example: null
+             *                      perPage:
+             *                        type: number
+             *                        example: 12
+             *                      allProducts:
+             *                        type: number
+             *                        example: 12
+             *                      currentPage:
+             *                        type: number
+             *                        example: 1
+             *                      pages:
+             *                        type: number
+             *                        example: 1
+             *                      nextPage:
+             *                        type: number
+             *                        example: 2
+             *
+             *       400:
+             *         description: Bad Request.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/400'
+             *
+             *       401:
+             *         description: Unauthorized.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/401'
+             *
+             *       412:
+             *         description: Precondition Failed.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/412'
+             *
+             *       500:
+             *         description: Internal Server Error.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/500'
+             *
+             */
+            router.get("/best-sellers", productController.getBestSellersOfMonth);
+
+            /**
+             * @swagger
              * /v1/{lang}/products/brands:
              *   get:
              *     security:

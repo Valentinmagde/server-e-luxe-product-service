@@ -7,6 +7,7 @@ import ProductType from "./product.type";
 import languageCodes from "../../../resources/data/data";
 import mongoose from "mongoose";
 import Attribute from "../attribute/attribute.model";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -229,6 +230,37 @@ class ProductService {
           });
 
           resolve(products);
+        } catch (error) {
+          reject(error);
+        }
+      })();
+    });
+  }
+
+  /**
+   * Get Best Sellers Of Month.
+   *
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-02-21
+   *
+   * @return {Promise<any>} the eventual completion or failure
+   */
+  public getBestSellersOfMonth(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      (async () => {
+        try {
+          const startDate = startOfMonth(new Date());
+          const endDate = endOfMonth(new Date());
+
+          const bestSellers = await Product.find({
+            updated_at: { $gte: startDate, $lte: endDate },
+            sales_count: { $gt: 0 }, // Exclure les produits sans ventes
+          })
+            .sort({ sales_count: -1 }) // Trier par nombre de ventes décroissant
+            .limit(10)
+            .lean();
+
+          resolve(bestSellers);
         } catch (error) {
           reject(error);
         }

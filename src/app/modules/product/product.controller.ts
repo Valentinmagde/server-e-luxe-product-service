@@ -84,6 +84,39 @@ class ProductController {
   }
 
   /**
+   * Get Best Sellers Of Month.
+   *
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-02-21
+   *
+   * @param {Request} req the http request
+   * @param {Response} res the http response
+   *
+   * @return {Promise<void>} the eventual completion or failure
+   */
+  public async getBestSellersOfMonth(req: Request, res: Response): Promise<void> {
+    productService
+      .getBestSellersOfMonth()
+      .then((result) => {
+        const response = {
+          status: statusCode.httpOk,
+          data: result,
+        };
+
+        return customResponse.success(response, res);
+      })
+      .catch((error) => {
+        const response = {
+          status: error?.status || statusCode.httpInternalServerError,
+          errNo: errorNumbers.genericError,
+          errMsg: error?.message || error,
+        };
+
+        return customResponse.error(response, res);
+      });
+  }
+
+  /**
    * Get showing store products
    *
    * @author Valentin Magde <valentinmagde@gmail.com>

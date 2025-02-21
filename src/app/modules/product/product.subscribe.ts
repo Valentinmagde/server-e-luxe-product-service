@@ -49,6 +49,11 @@ class ProductSubscribe {
                           path: "/current_stock",
                           value: result.current_stock - e.qty,
                         },
+                        {
+                          op: "replace",
+                          path: "/sales_count",
+                          value: result.sales_count + e.qty,
+                        },
                       ])
                       .then((product) => {
                         console.log(product);
