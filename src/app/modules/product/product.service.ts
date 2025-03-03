@@ -390,7 +390,7 @@ class ProductService {
     return new Promise((resolve, reject) => {
       (async () => {
         try {
-          const brands = await Product.distinct("brand");
+          const brands = await Product.distinct("brand", { brand: { $ne: "" } });
           resolve(brands);
         } catch (error) {
           reject(error);

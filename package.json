@@ -1,5 +1,5 @@
 {
-  "name": "userservice",
+  "name": "product-service",
   "version": "1.0.0",
   "description": "This is a service to manage Users API",
   "main": "server.ts",
