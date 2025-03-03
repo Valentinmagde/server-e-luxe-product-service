@@ -43,4 +43,4 @@ jobs:
           git pull origin main
           npm install
           tsc --build --force tsconfig.json
-          pm2 restart e-luxe-product-service 
+          pm2 reload all 
