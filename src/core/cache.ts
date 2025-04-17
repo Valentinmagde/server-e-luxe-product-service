@@ -1,6 +1,6 @@
 import { RedisClientType, createClient } from "redis";
 import i18n from "./i18n";
-import config from "../config";
+import config from "../config/environment";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>

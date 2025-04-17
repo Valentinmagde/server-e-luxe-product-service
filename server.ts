@@ -5,7 +5,7 @@ import customResponse from "./src/app/utils/custom-response.util";
 import Routes from "./src/app/routes/routes";
 import statusCode from "./src/app/utils/status-code.util";
 import errorNumbers from "./src/app/utils/error-numbers.util";
-import config from "./src/config";
+import config from "./src/config/environment";
 import AppConfig from "./src/core/app";
 import Subscribes from "./src/app/subscribes/subscribes";
 
@@ -63,7 +63,7 @@ class Server {
    *
    * @returns {void}
    */
-   public includeSubscribes(): void {
+  public includeSubscribes(): void {
     new Subscribes().subscribesConfig();
   }
 

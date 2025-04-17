@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import customResponse from "../app/utils/custom-response.util";
 import errorNumbers from "../app/utils/error-numbers.util";
 import statusCode from "../app/utils/status-code.util";
-import config from "../config";
+import config from "../config/environment";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>

@@ -1,5 +1,5 @@
 import amqplib from "amqplib";
-import config from "../config";
+import config from "../config/environment";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>

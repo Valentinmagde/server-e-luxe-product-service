@@ -4,7 +4,7 @@ dotenv.config();
 
 const dev = {
   // Environment
-  env: process.env.NODE_ENV || "development",
+  env: process.env.NODE_ENV || "local",
 
   // Server config
   nodeServerPort: process.env.NODE_SERVER_PORT || 2500,
@@ -40,6 +40,9 @@ const dev = {
 
   // Swagger documentation
   swaggerBaseUrl: process.env.SWAGGER_BASE_URL || "/v1/products/docs",
+
+  // Store Url
+  storeUrl: process.env.STRORE_URL || "http://localhost:7000"
 };
 
 export default dev;

@@ -8,6 +8,9 @@ import languageCodes from "../../../resources/data/data";
 import mongoose from "mongoose";
 import Attribute from "../attribute/attribute.model";
 import { startOfMonth, endOfMonth } from "date-fns";
+import * as bizSdk from "facebook-nodejs-business-sdk";
+import facebookConfig from "../../../config/facebook";
+import config from "../../../config/environment";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -390,7 +393,9 @@ class ProductService {
     return new Promise((resolve, reject) => {
       (async () => {
         try {
-          const brands = await Product.distinct("brand", { brand: { $ne: "" } });
+          const brands = await Product.distinct("brand", {
+            brand: { $ne: "" },
+          });
           resolve(brands);
         } catch (error) {
           reject(error);
@@ -423,6 +428,7 @@ class ProductService {
           });
 
           const createdProduct: any = await product.save();
+          await this.syncProductToFacebook(createdProduct);
 
           resolve(createdProduct);
         } catch (error) {
@@ -849,6 +855,8 @@ class ProductService {
             product.extras = data.extras;
 
             await product.save();
+            await this.syncProductToFacebook(product as any);
+
             resolve(product);
           } else {
             resolve(product);
@@ -994,6 +1002,146 @@ class ProductService {
         }
       })();
     });
+  }
+
+  /*-----------------------------------------------------------------------------------------------
+  //  PRIVATE METHODS
+  -----------------------------------------------------------------------------------------------*/
+  /**
+   * Synchronizes a product with the Facebook catalog.
+   * This function formats the product data according to Facebook's product feed specifications
+   * and sends it to the Facebook catalog for listing.
+   *
+   * @author Valentin magde <valentinmagde@gmail.com>
+   * @since 2025-04-03
+   * @private
+   * @async
+   * @function
+   * @param {Object} product - The product object containing details to be synchronized.
+   * @param {string} product.sku - The unique SKU (Stock Keeping Unit) of the product.
+   * @param {boolean} product.current_stock - Indicates if the product is in stock.
+   * @param {string} product.description - The description of the product.
+   * @param {string[]} product.image - Array of image URLs for the product.
+   * @param {string} product._id - The slugified name of the product for URL generation.
+   * @param {string} product.name - The name of the product.
+   * @param {number} product.price - The price of the product in base currency (converted to cents).
+   *
+   * @throws {Error} Logs an error if synchronization with Facebook fails.
+   *
+   * @returns {Promise<void>} Resolves when the product is successfully synchronized.
+   */
+  private async syncProductToFacebook(product: {
+    sku: string;
+    current_stock: number;
+    description: {
+      en: string;
+      fr: string;
+    };
+    image: string[];
+    _id: string;
+    title: {
+      en: string;
+      fr: string;
+    };
+    prices: {
+      original_price: number;
+      price: number;
+    };
+    is_promotional: boolean;
+    brand: string;
+  }): Promise<void> {
+    return new Promise((resolve, reject) => {
+      (async () => {
+        try {
+          const api = bizSdk.FacebookAdsApi.init(
+            facebookConfig.accessToken as string
+          );
+          const ProductCatalog = bizSdk.ProductCatalog;
+
+          const productData = {
+            // id: product?.sku.toString() || product?._id.toString(),
+            retailer_id: product?.sku.toString(),
+            availability: product?.current_stock ? "in stock" : "out of stock",
+            condition: "new",
+            description: (
+              product?.description?.en || product?.description?.fr
+            )?.substring(0, 5000),
+            image_url: product.image[0],
+            url: `${config.storeUrl}/shop/${product._id}`,
+            name: product?.title?.en || product?.title?.fr,
+            price: Math.round(product?.prices?.original_price * 100),
+            sale_price: product?.is_promotional
+              ? Math.round(product?.prices?.price * 100)
+              : null,
+            currency: "USD",
+            brand: product?.brand,
+          };
+
+          const catalog = new ProductCatalog(facebookConfig.catalogId, {
+            api: api,
+          });
+
+          // Check if product exists
+          const existingProducts: any = await catalog.getProducts(["id"], {
+            filter: JSON.stringify({
+              retailer_id: { eq: product?.sku.toString() },
+            }),
+          });
+
+          let result: any = null;
+
+          if (existingProducts[0]?.id) {
+            // 2. Try to update existing product first
+            result = await catalog.update([], {
+              productData,
+              update_mask: this.getUpdateMask(productData),
+              force_refresh: true,
+              timestamp: Math.floor(Date.now() / 1000),
+            });
+
+            resolve(result);
+          } else {
+            result = await catalog.createProduct([], productData);
+
+            resolve(result);
+          }
+        } catch (error) {
+          reject(
+            `Failed to sync product to Facebook: ${this.formatFacebookError(
+              error
+            )}`
+          );
+        }
+      })();
+    });
+  }
+
+  /**
+   * Generates a Facebook API update_mask string from the provided data object.
+   * The update_mask specifies which fields should be updated, optimizing API payload.
+   *
+   *  @param {Record<string, any>} data - Key-value pairs of product data
+   * @returns {string} Comma-separated list of fields to update (e.g., "price,availability")
+   */
+  private getUpdateMask(data: Record<string, any>): string {
+    return Object.keys(data)
+      .filter((key) => data[key] !== undefined)
+      .join(",");
+  }
+
+  /**
+   *  Extracts human-readable error message from Facebook API error objects.
+   * Provides a fallback message when error format is unexpected.
+   *
+   * @param {any} error - Raw error object
+   * @returns {string} User-friendly error message
+   */
+  private formatFacebookError(error: any): string {
+    return (
+      error?.response?.error?.error_user_msg ||
+      error?.message ||
+      "Unknown error"
+    );
   }
 }
 

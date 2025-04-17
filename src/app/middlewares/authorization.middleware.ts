@@ -5,7 +5,7 @@ import customResponse from "../utils/custom-response.util";
 import errorNumbers from "../utils/error-numbers.util";
 import statusCode from "../utils/status-code.util";
 import cacheManager from "../../core/cache";
-import config from "../../config";
+import config from "../../config/environment";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -60,6 +60,9 @@ class Authorization {
 
             // token in deny list?
             if (inDenyList) {
+              // Close connection after token verification to avoid exhausting available connections
+              await redisClient.quit();
+
               const response = {
                 status: statusCode.httpUnauthorized,
                 errNo: errorNumbers.invalidToken,
@@ -69,7 +72,10 @@ class Authorization {
               return customResponse.error(response, res);
             } else {
               // token valid?
-              jwt.verify(token, publicKey, (err, decode) => {
+              jwt.verify(token, publicKey, async(err, decode) => {
+                // Close connection after token verification to avoid exhausting available connections
+                await redisClient.quit();
+
                 if (err) {
                   const response = {
                     status: statusCode.httpUnauthorized,

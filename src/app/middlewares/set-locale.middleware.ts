@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import config from "../../config";
+import config from "../../config/environment";
 import statusCode from "../utils/status-code.util";
 import errorNumbers from "../utils/error-numbers.util";
 import customResponse from "../utils/custom-response.util";
