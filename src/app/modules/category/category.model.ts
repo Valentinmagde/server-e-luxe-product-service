@@ -6,7 +6,7 @@ const categoryShema = new mongoose.Schema(
     slug: { type: String, require: true },
     description: { type: Object, required: false },
     parent_id: { type: String, required: false },
-    parent_name: { type: String, required: false },
+    parent_name: { type: Object, required: false },
     id: { type: String, required: false },
     icon: { type: String, required: false },
     image: { type: String, required: false },

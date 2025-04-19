@@ -301,7 +301,7 @@ class CategoryService {
             category.image = data.image || category.image;
             category.status = data.status || category.status;
             category.parent_id = data.parent_id || category.parent_id;
-            category.parent_name = data.parent_name || category.parent_name;
+            category.parent_name = data.parent_name;
             category.is_top_category =
               data.is_top_category || category.is_top_category;
 

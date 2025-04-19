@@ -6,7 +6,7 @@ export default interface CategoryType {
     slug: string;
     description: object;
     parent_id: string;
-    parent_name: string;
+    parent_name: object;
     id: string;
     icon: string;
     image: string;

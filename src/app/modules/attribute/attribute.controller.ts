@@ -62,7 +62,7 @@ class AttributeController {
   public async store(req: Request, res: Response): Promise<void> {
     const validationRule = {
       name: "required",
-      type: "required",
+      // type: "required",
     };
 
     await validator
