@@ -14,6 +14,7 @@ export default interface CategoryType {
     status: 'show'|'hide';
     products: Array<ProductType>;
     children?: Array<CategoryType>;
+    product_count: number;
     created_at?: Date;
     updated_at?: Date;
     __v?: number;

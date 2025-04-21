@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 /**
  * Check ObjectId validity
  *
@@ -36,3 +38,35 @@ export function slugify(str: string): string {
       .replace(/-+/g, "-")
   ); // remove consecutive hyphens
 }
+
+/**
+ * Normalizes an ID to its string representation.
+ * @author Valentin Magde <valentinmagde@gmail.com>
+ * @since 2025-04-21
+ * @param {any} id - The ID to normalize. Can be ObjectId, string, or other type.
+ * @returns {string|any} - String representation if input was ObjectId, otherwise the original value.
+ */
+export const normalizeId = (id: any): string | any => id instanceof mongoose.Types.ObjectId ? id.toString() : id;
+
+/**
+ * Removes duplicate categories from an array based on a composite key of _id and parent_id.
+ *
+ * @author Valentin Magde <valentinmagde@gmail.com>
+ * @since 2025-04-21
+ * @param {Array<Object>} categories - Array of category objects to deduplicate.
+ * @returns {Array<Object>} - New array with duplicates removed (first occurrence kept).
+ */
+export const removeDuplicates = (categories: any[]): any[] => {
+  const seen = new Map();
+
+  return categories.filter(cat => {
+    const id = normalizeId(cat._id);
+    const key = `${id}|${JSON.stringify(cat.parent_id)}`;
+
+    if (!seen.has(key)) {
+      seen.set(key, true);
+      return true;
+    }
+    return false;
+  });
+};

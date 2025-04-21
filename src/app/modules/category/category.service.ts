@@ -1,7 +1,9 @@
+import mongoose from "mongoose";
 import Product from "../product/product.model";
 import Category from "./category.model";
 import CategoryType from "./category.type";
 import * as jsonpatch from "fast-json-patch";
+import { removeDuplicates } from "../../utils/helpers.util";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -223,7 +225,7 @@ class CategoryService {
     return new Promise((resolve, reject) => {
       (async () => {
         try {
-          const categories = await Product.aggregate([
+          const baseCategories = await Product.aggregate([
             {
               // Décomposer le tableau de catégories dans chaque produit
               $unwind: "$categories",
@@ -257,16 +259,37 @@ class CategoryService {
             {
               // Sélectionner les champs à afficher
               $project: {
-                // _id: 0,
                 _id: "$_id",
                 name: "$categoryDetails.name",
-                productCount: "$count",
+                parent_name: "$categoryDetails.parent_name",
+                parent_id: "$categoryDetails.parent_id",
+                product_count: "$count",
                 isChecked: { $literal: false }, // Add 'isChecked' with a hardcoded value
               },
             },
           ]);
 
-          resolve(categories);
+          // Récupération des ancêtres sans doublons
+          const uniqueAncestors = new Map<string, any>();
+
+          await Promise.all(
+            baseCategories.map(async (category) => {
+              const ancestors = await this.getAncestors(category._id);
+              ancestors.forEach((ancestor) => {
+                if (!uniqueAncestors.has(ancestor._id.toString())) {
+                  uniqueAncestors.set(ancestor._id.toString(), ancestor);
+                }
+              });
+            })
+          );
+
+          // Combinaison des résultats sans doublons
+          const allCategories = removeDuplicates([
+            ...baseCategories,
+            ...Array.from(uniqueAncestors.values()),
+          ]);
+
+          resolve(this.readyToParentAndChildrenCategory(allCategories));
         } catch (error) {
           reject(error);
         }
@@ -522,11 +545,72 @@ class CategoryService {
         status: cate.status,
         is_top_category: cate.is_top_category,
         image: cate.image,
+        productCount: cate?.product_count || 0,
+        isChecked: false,
         children: this.readyToParentAndChildrenCategory(categories, cate._id),
       });
     }
 
     return categoryList;
+  }
+
+  /**
+   * Retrieves the chain of ancestor categories for a given category ID.
+   *
+   * This method performs a recursive lookup of the parent categories until it reaches
+   * the top-level category (i.e., a category with no parent). Each ancestor is added
+   * to the beginning of the `ancestors` array, resulting in an ordered list from root to immediate parent.
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-04-20
+   * @param {string} categoryId - The ID of the category whose ancestors are to be retrieved.
+   * @param {any[]} ancestors - (Optional) An accumulator array used during recursion to collect ancestor categories.
+   * @returns {Promise<any[]>} A promise that resolves to an array of ancestor category objects,
+   * each containing `_id` and `name`.
+   */
+  private async getAncestors(
+    categoryId: string,
+    ancestors: any[] = []
+  ): Promise<any[]> {
+    const category = await Category.findById(categoryId);
+    if (!category || !category.parent_id) return ancestors;
+
+    // 1. Conversion de l'ID en ObjectId
+    const parentId = new mongoose.Types.ObjectId(category.parent_id);
+
+    // 2. Récupère le parent avec le nombre de produits
+    const parentWithProducts = await Product.aggregate([
+      {
+        $match: {
+          categories: parentId,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          productCount: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          productCount: 1,
+        },
+      },
+    ]);
+
+    const parent: any = await Category.findById(category.parent_id);
+    if (!parent) return ancestors;
+
+    ancestors.unshift({
+      _id: parent._id,
+      name: parent.name,
+      ...(parent.parent_id !== undefined && { parent_id: parent.parent_id }),
+      ...(parent.parent_name !== undefined && { parent_name: parent.parent_name }),
+      product_count: parentWithProducts[0]?.productCount || 0,
+      isChecked: false,
+    });
+
+    return this.getAncestors(parent._id, ancestors);
   }
 }
 
