@@ -111,6 +111,7 @@ const productSchema = new mongoose.Schema(
     store: { type: mongoose.Schema.Types.ObjectId },
     shipping: shippingSchema,
     translations: { type: Object, required: false },
+    user: { type: mongoose.Schema.Types.ObjectId, required: false },
   },
   {
     timestamps: {

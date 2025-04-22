@@ -37,6 +37,7 @@ class ProductService {
           const pageSize: number = Number(req.query.perPage) || 12;
 
           const name: string = (req.query.name as string) || "";
+          const user: string = (req.query.user as string) || "";
           const featured: string = (req.query.featured as string) || "";
           const promotional: string = (req.query.promotional as string) || "";
           const status: string = (req.query.status as string) || "";
@@ -134,6 +135,7 @@ class ProductService {
                 }
               : {}),
             ...(tag ? { tags: tag._id } : {}),
+            ...(user ? { user: user } : {}),
             ...(status === "published"
               ? { status: "show" }
               : status === "unPublished"
