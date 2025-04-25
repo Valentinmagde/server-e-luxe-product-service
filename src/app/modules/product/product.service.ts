@@ -37,6 +37,8 @@ class ProductService {
           const pageSize: number = Number(req.query.perPage) || 12;
 
           const name: string = (req.query.name as string) || "";
+          const startDateParam = (req.query.startDate as string) || "";
+          const endDateParam = (req.query.endDate as string) || "";
           const user: string = (req.query.user as string) || "";
           const featured: string = (req.query.featured as string) || "";
           const promotional: string = (req.query.promotional as string) || "";
@@ -57,6 +59,21 @@ class ProductService {
           const rating: number = req.query.rating
             ? Number(req.query.rating)
             : 0;
+
+          let startDateFilter = {};
+          let endDateFilter = {};
+
+          if (startDateParam) {
+            const startDate = new Date(startDateParam);
+            startDate.setHours(0, 0, 0, 0); // Début de journée (00:00:00)
+            startDateFilter = { $gte: startDate };
+          }
+
+          if (endDateParam) {
+            const endDate = new Date(endDateParam);
+            endDate.setHours(23, 59, 59, 999); // Fin de journée (23:59:59.999)
+            endDateFilter = { $lte: endDate };
+          }
 
           // Fetch category and tag data in parallel
           const [category, tag] = await Promise.all([
@@ -136,6 +153,14 @@ class ProductService {
               : {}),
             ...(tag ? { tags: tag._id } : {}),
             ...(user ? { user: user } : {}),
+            ...(startDateParam || endDateParam
+              ? {
+                  created_at: {
+                    ...startDateFilter,
+                    ...endDateFilter,
+                  },
+                }
+              : {}),
             ...(status === "published"
               ? { status: "show" }
               : status === "unPublished"
