@@ -455,7 +455,10 @@ class ProductService {
           });
 
           const createdProduct: any = await product.save();
-          await this.syncProductToFacebook(createdProduct);
+
+          if (config.env === "production") {
+            await this.syncProductToFacebook(createdProduct);
+          }
 
           resolve(createdProduct);
         } catch (error) {
@@ -580,21 +583,22 @@ class ProductService {
 
           if (product && product.variants) {
             // Grouping logic for the product variants
-            const groupedVariants = product.variants.reduce(
-              (acc: any, variant: any) => {
-                const uniqueKey = Object.keys(variant).find(
-                  (key) => key.length === 24
-                ); // Adjust the condition if key length is different
-                if (uniqueKey) {
-                  if (!acc[uniqueKey]) {
-                    acc[uniqueKey] = [];
-                  }
-                  acc[uniqueKey].push(variant);
-                }
-                return acc;
-              },
-              {}
-            );
+            // const groupedVariants = product.variants.reduce(
+            //   (acc: any, variant: any) => {
+            //     const uniqueKey = Object.keys(variant).find(
+            //       (key) => key.length === 24
+            //     ); // Adjust the condition if key length is different
+            //     if (uniqueKey) {
+            //       if (!acc[uniqueKey]) {
+            //         acc[uniqueKey] = [];
+            //       }
+            //       acc[uniqueKey].push(variant);
+            //     }
+            //     return acc;
+            //   },
+            //   {}
+            // );
+            const groupedVariants = this.groupVariantsByKeys(product.variants);
 
             // Add the grouped variants to the product object for easier access
             product.grouped_variants = groupedVariants;
@@ -882,7 +886,10 @@ class ProductService {
             product.extras = data.extras;
 
             await product.save();
-            await this.syncProductToFacebook(product as any);
+
+            if (config.env === "production") {
+              await this.syncProductToFacebook(product as any);
+            }
 
             resolve(product);
           } else {
@@ -1169,6 +1176,65 @@ class ProductService {
       error?.message ||
       "Unknown error"
     );
+  }
+
+  /**
+   * Groups product variants by their ID keys (24-character keys)
+   *
+   * @author valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-05-01
+   * @param {any[]} variants - Array of product variants to group
+   * @returns {any[]} Array of grouped variants where each group is an object
+   *          with the ID key as property and array of variants as value
+   */
+  private groupVariantsByKeys(variants: any[]): any[] {
+    const result: any = {};
+
+    // Trouver toutes les clés d'ID (24 caractères)
+    const idKeys = Array.from(
+      new Set(
+        variants.flatMap((variant) =>
+          Object.keys(variant).filter((key) => key.length === 24)
+        )
+      )
+    );
+
+    idKeys.map((idKey) => {
+      const grouped: Record<string, any> = {};
+
+      variants.forEach((variant) => {
+        const keyValue = variant[idKey];
+        if (!keyValue) return;
+
+        if (!grouped[keyValue]) {
+          grouped[keyValue] = { [idKey]: keyValue };
+        }
+
+        Object.keys(variant).forEach((key) => {
+          if (key === idKey) return;
+
+          const val = variant[key];
+          if (val === undefined) return;
+
+          if (!grouped[keyValue][key]) {
+            if (key.length === 24) {
+              grouped[keyValue][key] = [val];
+            } else {
+              grouped[keyValue][key] = val;
+            }
+          } else {
+            if (key.length === 24) {
+              if (!grouped[keyValue][key].includes(val)) {
+                grouped[keyValue][key].push(val);
+              }
+            }
+          }
+        });
+      });
+
+      result[idKey] = Object.values(grouped);
+    });
+    return result;
   }
 }
 
