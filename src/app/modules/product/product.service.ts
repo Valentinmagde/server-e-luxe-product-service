@@ -205,25 +205,25 @@ class ProductService {
           // Group variants for each product
           products.forEach((product: any) => {
             if (product.variants) {
-              const groupedVariants = product.variants.reduce(
-                (acc: any, variant: any) => {
-                  // Find the unique key for the variant (assuming it’s a 24-character key)
-                  const uniqueKey = Object.keys(variant).find(
-                    (key) => key.length === 24
-                  );
-                  if (uniqueKey) {
-                    if (!acc[uniqueKey]) {
-                      acc[uniqueKey] = [];
-                    }
-                    acc[uniqueKey].push(variant);
-                  }
-                  return acc;
-                },
-                {}
-              );
+              // const groupedVariants = product.variants.reduce(
+              //   (acc: any, variant: any) => {
+              //     // Find the unique key for the variant (assuming it’s a 24-character key)
+              //     const uniqueKey = Object.keys(variant).find(
+              //       (key) => key.length === 24
+              //     );
+              //     if (uniqueKey) {
+              //       if (!acc[uniqueKey]) {
+              //         acc[uniqueKey] = [];
+              //       }
+              //       acc[uniqueKey].push(variant);
+              //     }
+              //     return acc;
+              //   },
+              //   {}
+              // );
 
               // Add grouped variants to the product object
-              product.grouped_variants = groupedVariants;
+              product.grouped_variants = this.groupVariantsByKeys(product.variants);
             }
           });
 
