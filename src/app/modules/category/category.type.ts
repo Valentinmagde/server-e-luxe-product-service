@@ -11,6 +11,7 @@ export default interface CategoryType {
     icon: string;
     image: string;
     is_top_category: boolean;
+    show_products_on_homepage: boolean;
     status: 'show'|'hide';
     products: Array<ProductType>;
     children?: Array<CategoryType>;

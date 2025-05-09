@@ -176,6 +176,74 @@ class CategoryRoutes {
 
             /**
              * @swagger
+             * /v1/{lang}/categories/showingProductsOnHomepage:
+             *   get:
+             *     security:
+             *      - bearerAuth: []
+             *     tags:
+             *     - Category
+             *     operationId: showingProductsOnHomepage
+             *     summary: Get all showing products on homepage categories.
+             *     description: Get all showing products on homepage categories.
+             *     parameters:
+             *      - in: path
+             *        name: lang
+             *        schema:
+             *          type: string
+             *          example: en
+             *        required: true
+             *        description: Language for the response. Supported
+             *          languages ['en', 'fr']
+             *
+             *     responses:
+             *       200:
+             *         description: Successfully retrieved showing products on homepage categories.
+             *         content:
+             *           application/json:
+             *             schema:
+             *                type: object
+             *                properties:
+             *                  status:
+             *                    type: string
+             *                    example: Ok
+             *                  data:
+             *                    type: array
+             *                    items:
+             *                      $ref: '#/components/schemas/Category'
+             *
+             *       400:
+             *         description: Bad Request.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/400'
+             *
+             *       401:
+             *         description: Unauthorized.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/401'
+             *
+             *       412:
+             *         description: Precondition Failed.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/412'
+             *
+             *       500:
+             *         description: Internal Server Error.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/500'
+             *
+             */
+            router.get("/showingProductsOnHomePage", categoryController.getShowingProductsOnHomePageCategories);
+
+            /**
+             * @swagger
              * /v1/{lang}/categories/withProducts:
              *   get:
              *     security:
@@ -240,7 +308,10 @@ class CategoryRoutes {
              *              $ref: '#/responses/schemas/500'
              *
              */
-            router.get("/withProducts", categoryController.getCategoriesWithProducts);
+            router.get(
+              "/withProducts",
+              categoryController.getCategoriesWithProducts
+            );
 
             /**
              * @swagger
@@ -861,7 +932,79 @@ class CategoryRoutes {
              */
             router.get("/:categoryId", categoryController.getCategoryById);
 
-             /**
+            /**
+             * @swagger
+             * /v1/{lang}/category/slug/{slug}:
+             *   get:
+             *     security:
+             *      - bearerAuth: []
+             *     tags:
+             *     - Category
+             *     operationId: bySlug
+             *     summary: Get category by slug.
+             *     description: Get a category from the system by name (slug).
+             *     parameters:
+             *      - in: path
+             *        name: lang
+             *        schema:
+             *          type: string
+             *          example: en
+             *        required: true
+             *        description: Language for the response. Supported
+             *          languages ['en', 'fr']
+             *      - in: path
+             *        name: slug
+             *        schema:
+             *          type: string
+             *        required: true
+             *        description: Category's slug
+             *
+             *     responses:
+             *       200:
+             *         description: The category has been successfully obtained.
+             *         content:
+             *           application/json:
+             *             schema:
+             *                type: object
+             *                properties:
+             *                  status:
+             *                    type: string
+             *                    example: Ok
+             *                  data:
+             *                    $ref: '#/components/schemas/Category'
+             *
+             *       '400':
+             *         description: Bad Request.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/400'
+             *
+             *       '401':
+             *         description: Unauthorized.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/401'
+             *
+             *       '404':
+             *         description: Not Found.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/404'
+             *
+             *       '500':
+             *         description: Internal Server Error.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/500'
+             *
+             */
+            router.get("/slug/:slug", categoryController.getCategoryBySlug);
+
+            /**
              * @swagger
              * /v1/{lang}/category/{categoryId}:
              *   put:

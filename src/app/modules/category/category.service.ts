@@ -64,6 +64,29 @@ class CategoryService {
   }
 
   /**
+   * Get category by slug
+   *
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-05-07
+   *
+   * @param {string} categorySlug the category's slug.
+   * @return {Promise<unknown>} the eventual completion or failure
+   */
+  public getCategoryBySlug(categorySlug: string): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      (async () => {
+        try {
+          const category = await Category.findOne({ slug: categorySlug });
+
+          resolve(category);
+        } catch (error) {
+          reject(error);
+        }
+      })();
+    });
+  }
+
+  /**
    * Create a category
    *
    * @author Valentin Magde <valentinmagde@gmail.com>
@@ -214,6 +237,30 @@ class CategoryService {
   }
 
   /**
+   * Get categories to display their products on homepage
+   *
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2024-10-07
+   *
+   * @return {Promise<unknown>} the eventual completion or failure
+   */
+  public getShowingProductsOnHomePageCategories(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      (async () => {
+        try {
+          const categories = await Category.find({
+            show_products_on_homepage: true,
+          });
+
+          resolve(categories);
+        } catch (error) {
+          reject(error);
+        }
+      })();
+    });
+  }
+
+  /**
    * Get categories with products
    *
    * @author Valentin Magde <valentinmagde@gmail.com>
@@ -325,8 +372,8 @@ class CategoryService {
             category.status = data.status || category.status;
             category.parent_id = data.parent_id || category.parent_id;
             category.parent_name = data.parent_name;
-            category.is_top_category =
-              data.is_top_category || category.is_top_category;
+            category.is_top_category = data.is_top_category;
+            category.show_products_on_homepage = data.show_products_on_homepage;
 
             const updatedCategory = await category.save();
 
@@ -544,6 +591,7 @@ class CategoryService {
         icon: cate.icon,
         status: cate.status,
         is_top_category: cate.is_top_category,
+        show_products_on_homepage: cate.show_products_on_homepage,
         image: cate.image,
         productCount: cate?.product_count || 0,
         isChecked: false,
@@ -605,7 +653,9 @@ class CategoryService {
       _id: parent._id,
       name: parent.name,
       ...(parent.parent_id !== undefined && { parent_id: parent.parent_id }),
-      ...(parent.parent_name !== undefined && { parent_name: parent.parent_name }),
+      ...(parent.parent_name !== undefined && {
+        parent_name: parent.parent_name,
+      }),
       product_count: parentWithProducts[0]?.productCount || 0,
       isChecked: false,
     });

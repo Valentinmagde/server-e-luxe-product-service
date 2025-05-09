@@ -11,6 +11,7 @@ const categoryShema = new mongoose.Schema(
     icon: { type: String, required: false },
     image: { type: String, required: false },
     is_top_category: { type: Boolean, default: false },
+    show_products_on_homepage: { type: Boolean, default: false },
     status: { type: String, lowercase: true, enum: ['show', 'hide'], default: 'show' },
     products: [{ type: mongoose.Schema.Types.ObjectId, ref: "product" }],
   },
