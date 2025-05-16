@@ -33,6 +33,7 @@ class ProductService {
     return new Promise((resolve, reject) => {
       (async () => {
         try {
+          const lang = req.params.lang as string;
           const page: number = Number(req.query.page) || 1;
           const pageSize: number = Number(req.query.perPage) || 12;
 
@@ -114,14 +115,57 @@ class ProductService {
               .map((variant) => variant._id?.toString())
           );
 
+          // Recherche des tags liés au nom saisi
+          let tagIdsFromSearch: string[] = [];
+          if (name) {
+            const matchingTags = await Tag.find(
+              {
+                $or: [{ [`name.${lang}`]: { $regex: name, $options: "i" } }],
+              },
+              "_id"
+            );
+
+            tagIdsFromSearch = matchingTags.map((tag) => tag._id.toString());
+          }
+
+          // Recherche des catégories liées au nom saisi
+          let categoryIdsFromSearch: string[] = [];
+          if (name) {
+            const matchingCategories = await Category.find(
+              {
+                $or: [{ [`name.${lang}`]: { $regex: name, $options: "i" } }],
+              },
+              "_id"
+            );
+
+            categoryIdsFromSearch = matchingCategories.map((cat) =>
+              cat._id.toString()
+            );
+          }
+
+          const combinedCategoryIds = [
+            ...(category ? [category._id.toString()] : []),
+            ...categoryIdsFromSearch,
+            ...categories,
+          ];
+
           const filter = {
             ...(vendor ? { vendor } : {}),
             ...(name
               ? {
-                  [`title.${req.params.lang as string}`]: {
-                    $regex: name,
-                    $options: "i",
-                  },
+                  $or: [
+                    { [`title.${lang}`]: { $regex: name, $options: "i" } },
+                    {
+                      [`description.${lang}`]: { $regex: name, $options: "i" },
+                    },
+                    {
+                      [`short_description.${lang}`]: {
+                        $regex: name,
+                        $options: "i",
+                      },
+                    },
+                    { name: { $regex: name, $options: "i" } },
+                  ],
                 }
               : {}),
             ...(featured ? { featured: { $gte: featured } } : {}),
@@ -135,8 +179,9 @@ class ProductService {
                 }
               : {}),
             ...(rating ? { rating: { $gte: rating } } : {}),
-            ...(category ? { categories: category._id } : {}),
-            ...(categories.length ? { categories: { $in: categories } } : {}),
+            ...(combinedCategoryIds.length
+              ? { categories: { $in: combinedCategoryIds } }
+              : {}),
             ...(brands.length ? { brand: { $in: brands } } : {}),
             ...(colors.length
               ? {
@@ -151,7 +196,13 @@ class ProductService {
                   },
                 }
               : {}),
-            ...(tag ? { tags: tag._id } : {}),
+            ...(tag || tagIdsFromSearch.length
+              ? {
+                  tags: {
+                    $in: [tag?._id, ...tagIdsFromSearch].filter(Boolean),
+                  },
+                }
+              : {}),
             ...(user ? { user: user } : {}),
             ...(startDateParam || endDateParam
               ? {
@@ -205,25 +256,10 @@ class ProductService {
           // Group variants for each product
           products.forEach((product: any) => {
             if (product.variants) {
-              // const groupedVariants = product.variants.reduce(
-              //   (acc: any, variant: any) => {
-              //     // Find the unique key for the variant (assuming it’s a 24-character key)
-              //     const uniqueKey = Object.keys(variant).find(
-              //       (key) => key.length === 24
-              //     );
-              //     if (uniqueKey) {
-              //       if (!acc[uniqueKey]) {
-              //         acc[uniqueKey] = [];
-              //       }
-              //       acc[uniqueKey].push(variant);
-              //     }
-              //     return acc;
-              //   },
-              //   {}
-              // );
-
               // Add grouped variants to the product object
-              product.grouped_variants = this.groupVariantsByKeys(product.variants);
+              product.grouped_variants = this.groupVariantsByKeys(
+                product.variants
+              );
             }
           });
 
