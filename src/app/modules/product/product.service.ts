@@ -456,10 +456,39 @@ class ProductService {
     return new Promise((resolve, reject) => {
       (async () => {
         try {
-          const brands = await Product.distinct("brand", {
-            brand: { $ne: "" },
-          });
-          resolve(brands);
+          const brands = await Product.aggregate([
+            {
+              $match: {
+                brand: { $ne: "" },
+              },
+            },
+            {
+              $project: {
+                brand: {
+                  $trim: {
+                    input: { $toLower: "$brand" },
+                  },
+                },
+              },
+            },
+            {
+              $group: {
+                _id: "$brand",
+              },
+            },
+            {
+              $sort: {
+                _id: 1,
+              },
+            },
+          ]);
+
+          const cleanedBrands: string[] = brands
+            .map(b => b._id?.trim())
+            .filter(b => !!b)
+            .map((s: string) => s.charAt(0).toUpperCase() + s.slice(1));
+
+          resolve(cleanedBrands);
         } catch (error) {
           reject(error);
         }
