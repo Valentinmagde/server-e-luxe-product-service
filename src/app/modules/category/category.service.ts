@@ -274,6 +274,12 @@ class CategoryService {
         try {
           const baseCategories = await Product.aggregate([
             {
+              // Filtrer uniquement les produits avec status = "show"
+              $match: {
+                status: "show",
+              },
+            },
+            {
               // Décomposer le tableau de catégories dans chaque produit
               $unwind: "$categories",
             },

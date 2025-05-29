@@ -5,7 +5,7 @@ import Product from "./product.model";
 import * as jsonpatch from "fast-json-patch";
 import ProductType from "./product.type";
 import languageCodes from "../../../resources/data/data";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import Attribute from "../attribute/attribute.model";
 import { startOfMonth, endOfMonth } from "date-fns";
 import * as bizSdk from "facebook-nodejs-business-sdk";
@@ -91,10 +91,18 @@ class ProductService {
             ? await Attribute.find(
                 {
                   $or: [
-                    { "variants.name.en": { $in: colors } },
-                    { "variants.name.fr": { $in: colors } },
+                    {
+                      "variants.name.en": {
+                        $in: colors.map((c) => new RegExp(`^${c}$`, "i")),
+                      },
+                    },
+                    {
+                      "variants.name.fr": {
+                        $in: colors.map((c) => new RegExp(`^${c}$`, "i")),
+                      },
+                    },
                   ],
-                  status: "show", // Ensure the attribute is visible
+                  status: "show",
                 },
                 { _id: 1, name: 1, variants: 1 }
               )
@@ -144,9 +152,9 @@ class ProductService {
           }
 
           const combinedCategoryIds = [
-            ...(category ? [category._id.toString()] : []),
-            ...categoryIdsFromSearch,
-            ...categories,
+            ...(category ? [new Types.ObjectId(category._id)] : []),
+            ...categoryIdsFromSearch.map((id) => new Types.ObjectId(id)),
+            ...categories.map((id) => new Types.ObjectId(id)),
           ];
 
           const filter = {
@@ -182,7 +190,16 @@ class ProductService {
             ...(combinedCategoryIds.length
               ? { categories: { $in: combinedCategoryIds } }
               : {}),
-            ...(brands.length ? { brand: { $in: brands } } : {}),
+            ...(brands.length
+              ? {
+                  $expr: {
+                    $in: [
+                      { $toLower: "$brand" },
+                      brands.map((b) => b.toLowerCase()),
+                    ],
+                  },
+                }
+              : {}),
             ...(colors.length
               ? {
                   variants: {
@@ -223,35 +240,143 @@ class ProductService {
               : {}),
           };
 
-          const sortOrder: any =
-            order === "lowest"
-              ? { "prices.price": 1 }
-              : order === "highest"
-              ? { "prices.price": -1 }
-              : order === "newest"
-              ? { created_at: -1 }
-              : order === "date-added-desc"
-              ? { created_at: -1 }
-              : order === "date-updated-asc"
-              ? { updated_at: 1 }
-              : order === "date-updated-desc"
-              ? { updated_at: -1 }
-              : order === "toprated"
-              ? { rating: -1 }
-              : order === "popular"
-              ? { sales_count: -1 }
-              : { _id: -1 };
+          let products;
+          let count;
 
-          const count = await Product.countDocuments(filter);
+          if (order === "lowest" || order === "highest") {
+            // Pipeline d'agrégation amélioré
+            const aggregationPipeline: any[] = [
+              // Étape 1: Appliquer le filtre de base
+              { $match: filter },
 
-          const products = await Product.find(filter)
-            .populate("categories", "_id name slug")
-            .populate("category", "_id name slug")
-            .populate("tags", "name slug")
-            .sort(sortOrder)
-            .skip(pageSize * (page - 1))
-            .limit(pageSize)
-            .lean();
+              // Étape 2: Préparer les données de prix
+              {
+                $addFields: {
+                  // Vérifier si le produit a des variants
+                  hasVariants: { $gt: [{ $size: "$variants" }, 0] },
+
+                  // Prix de base (promo ou original)
+                  basePriceValue: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ["$promotional", true] },
+                          { $gt: ["$date_to_promo", new Date()] },
+                        ],
+                      },
+                      { $toDouble: "$prices.price" },
+                      { $toDouble: "$prices.original_price" },
+                    ],
+                  },
+
+                  // Prix du premier variant (si existe)
+                  firstVariantPriceValue: {
+                    $let: {
+                      vars: {
+                        firstVar: {
+                          $ifNull: [{ $arrayElemAt: ["$variants", 0] }, {}],
+                        },
+                      },
+                      in: {
+                        $cond: [
+                          { $gt: [{ $toDouble: "$$firstVar.price" }, 0] },
+                          { $toDouble: "$$firstVar.price" },
+                          { $toDouble: "$$firstVar.original_price" },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+
+              // Étape 3: Calculer le prix final
+              {
+                $addFields: {
+                  finalPrice: {
+                    $cond: [
+                      { $gt: ["$basePriceValue", 0] },
+                      "$basePriceValue",
+                      {
+                        $cond: [
+                          {
+                            $and: [
+                              { $eq: ["$hasVariants", true] },
+                              { $gt: ["$firstVariantPriceValue", 0] },
+                            ],
+                          },
+                          "$firstVariantPriceValue",
+                          0,
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+
+              // Étape 4: Filtrer selon min/max (si spécifiés)
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      ...(min ? [{ $gte: ["$finalPrice", min] }] : []),
+                      ...(max > 0 ? [{ $lte: ["$finalPrice", max] }] : []),
+                    ],
+                  },
+                },
+              },
+
+              // Étape 5: Trier les résultats
+              {
+                $sort: {
+                  finalPrice: order === "highest" ? -1 : 1,
+                  _id: 1,
+                },
+              },
+
+              // Étape 6: Pagination
+              { $skip: (page - 1) * pageSize },
+              { $limit: pageSize },
+
+              // Étape 7: Peuplement des relations
+              {
+                $lookup: {
+                  from: "categories",
+                  localField: "categories",
+                  foreignField: "_id",
+                  as: "categories",
+                },
+              },
+              {
+                $lookup: {
+                  from: "tags",
+                  localField: "tags",
+                  foreignField: "_id",
+                  as: "tags",
+                },
+              },
+            ];
+
+            // Exécuter en parallèle
+            const [aggregationResult, totalCount] = await Promise.all([
+              Product.aggregate(aggregationPipeline),
+              Product.countDocuments(filter),
+            ]);
+
+            products = aggregationResult;
+            count = totalCount;
+          } else {
+            // Gestion des autres tris (inchangée)
+            const sortOrder = this.getSortOrder(order);
+            count = await Product.countDocuments(filter);
+            products = await Product.find(filter)
+              .populate("categories", "_id name slug")
+              .populate("category", "_id name slug")
+              .populate("tags", "name slug")
+              .sort(sortOrder)
+              .skip(pageSize * (page - 1))
+              .limit(pageSize)
+              .lean();
+          }
 
           // Group variants for each product
           products.forEach((product: any) => {
@@ -484,8 +609,8 @@ class ProductService {
           ]);
 
           const cleanedBrands: string[] = brands
-            .map(b => b._id?.trim())
-            .filter(b => !!b)
+            .map((b) => b._id?.trim())
+            .filter((b) => !!b)
             .map((s: string) => s.charAt(0).toUpperCase() + s.slice(1));
 
           resolve(cleanedBrands);
@@ -1300,6 +1425,30 @@ class ProductService {
       result[idKey] = Object.values(grouped);
     });
     return result;
+  }
+
+  /**
+   * Returns the MongoDB sort criteria based on the requested order
+   *
+   * @param {string} order - The sorting option requested.
+   * @returns {Object} MongoDB sort object
+   */
+  private getSortOrder(order: string): any {
+    switch (order) {
+      case "newest":
+      case "date-added-desc":
+        return { created_at: -1 };
+      case "date-updated-asc":
+        return { updated_at: 1 };
+      case "date-updated-desc":
+        return { updated_at: -1 };
+      case "toprated":
+        return { rating: -1 };
+      case "popular":
+        return { sales_count: -1 };
+      default:
+        return { _id: -1 };
+    }
   }
 }
 
