@@ -15,6 +15,18 @@ import { checkObjectId } from "../../utils/helpers.util";
  */
 class ProductController {
   /**
+   * Constructs a new instance of the ProductController class.
+   *
+   * @author Valentin magde <valentinmagde@gmail.com>
+   * This constructor binds the handleError method to the current instance
+   * of the class to ensure the correct `this` context is maintained when the method
+   * is used as a callback or event handler.
+   */
+  constructor() {
+    this.handleError = this.handleError.bind(this);
+  }
+
+  /**
    * Show products details by filter
    *
    * @author Valentin Magde <valentinmagde@gmail.com>
@@ -94,7 +106,10 @@ class ProductController {
    *
    * @return {Promise<void>} the eventual completion or failure
    */
-  public async getBestSellersOfMonth(req: Request, res: Response): Promise<void> {
+  public async getBestSellersOfMonth(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     productService
       .getBestSellersOfMonth()
       .then((result) => {
@@ -166,20 +181,23 @@ class ProductController {
    * @return {Promise<void>} the eventual completion or failure
    */
   public async getAllBrands(req: Request, res: Response): Promise<void> {
-    productService.getAllBrands().then((result) => {
-      const response = {
-        status: statusCode.httpOk,
-        data: result,
-      };
-      return customResponse.success(response, res);
-    }).catch((error) => {
-      const response = {
-        status: error?.status || statusCode.httpInternalServerError,
-        errNo: errorNumbers.genericError,
-        errMsg: error?.message || error,
-      };
-      return customResponse.error(response, res);
-    });
+    productService
+      .getAllBrands()
+      .then((result) => {
+        const response = {
+          status: statusCode.httpOk,
+          data: result,
+        };
+        return customResponse.success(response, res);
+      })
+      .catch((error) => {
+        const response = {
+          status: error?.status || statusCode.httpInternalServerError,
+          errNo: errorNumbers.genericError,
+          errMsg: error?.message || error,
+        };
+        return customResponse.error(response, res);
+      });
   }
 
   /**
@@ -824,6 +842,31 @@ class ProductController {
   }
 
   /**
+   * Calculate the final price of a product based on its associated costs and profit grid.
+   *
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-07-05
+   *
+   * @param {Request} req the http request
+   * @param {Response} res the http response
+   *
+   * @return {Promise<void>} the eventual completion or failure
+   */
+  public async calculateFinalPrice(req: Request, res: Response): Promise<void> {
+    try {
+      const { costIds, targetCurrency = "USD" } = req.body;
+      const result = await productService.calculateFinalPrice(
+        costIds,
+        targetCurrency
+      );
+
+      customResponse.success({ status: statusCode.httpOk, data: result }, res);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
    * Update a product
    *
    * @author Valentin Magde <valentinmagde@gmail.com>
@@ -1065,6 +1108,27 @@ class ProductController {
 
         return customResponse.error(response, res);
       });
+  }
+
+  /**
+   * Handle errors
+   *
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-07-06
+   *
+   * @param {any} error the error
+   * @param {Response} res the http response
+   * @return {void}
+   */
+  private handleError(error: any, res: Response): void {
+    customResponse.error(
+      {
+        status: error?.status || statusCode.httpInternalServerError,
+        errNo: errorNumbers.genericError,
+        errMsg: error?.message || error,
+      },
+      res
+    );
   }
 }
 

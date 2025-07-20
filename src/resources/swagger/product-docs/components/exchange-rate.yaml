@@ -1,0 +1,28 @@
+components:
+  schemas:
+    ExchangeRate:
+      type: object
+      properties:
+        _id:
+          type: string
+        from_currency:
+          type: string
+        to_currency:
+          type: string
+        rate:
+          type: number
+        fee_percentage:
+          type: number
+          default: 0.5
+        status:
+          type: string
+          enum: ["show", "hide"]
+          default: "show"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        __v:
+          type: number

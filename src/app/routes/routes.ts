@@ -15,6 +15,9 @@ import tagRoutes from "../modules/tag/tag.routes";
 import couponRoutes from "../modules/coupon/coupon.routes";
 import attributeRoutes from "../modules/attribute/attribute.routes";
 import extraRoutes from "../modules/extra/extra.routes";
+import associatedCostRoutes from "../modules/associated-costs/associated-costs.routes";
+import profitGridRoutes from "../modules/profit-grid/profit-grid.routes";
+import exchangeRateRoutes from "../modules/exchange-rate/exchange-rate.routes";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -77,6 +80,15 @@ class Routes {
 
             // Extras routes
             router.use(extraRoutes.extraRoutes());
+
+            // Associated costs routes
+            router.use(associatedCostRoutes.associatedCostRoutes());
+
+            // Profit grid routes
+            router.use(profitGridRoutes.profitGridRoutes());
+
+            // Exchange rate routes
+            router.use(exchangeRateRoutes.exchangeRateRoutes());
           })
         );
 

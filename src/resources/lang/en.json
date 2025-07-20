@@ -27,6 +27,18 @@
 		"extraNotFound": "Extra does not exits",
 		"invalidExtraId": "Invalid extra id"
 	},
+	"cost": {
+		"costNotFound": "Cost does not exits",
+		"invalidCostId": "Invalid cost id"
+	},
+	"profitGrid": {
+		"profitGridNotFound": "Profit grid does not exits",
+		"invalidProfitGridId": "Invalid profit grid id"
+	},
+	"exchangeRate": {
+		"exchangeRateNotFound": "Exchange rate does not exits",
+		"invalidExchangeRateId": "Invalid exchange rate id"
+	},
 	"unauthorize": {
 		"noToken": "No token",
 		"invalidToken": "Invalid token",

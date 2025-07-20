@@ -1,0 +1,27 @@
+components:
+  schemas:
+    ProfitGrid:
+      type: object
+      properties:
+        _id:
+          type: string
+        min_amount:
+          type: number
+        max_amount:
+          type: number
+        gross_rate:
+          type: number
+        deduction_rate:
+          type: number
+        net_rate:
+          type: number
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        __v:
+          type: number

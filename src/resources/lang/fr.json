@@ -27,6 +27,18 @@
         "extraNotFound": "Cet extra n'existe pas",
 		"invalidExtraId": "L'identifiant de cet extra n'est pas valide"
     },
+    "cost": {
+        "costNotFound": "Ce coût n'existe pas",
+		"invalidCostId": "L'identifiant de ce coût n'est pas valide"
+    },
+    "profitGrid": {
+        "profitGridNotFound": "Cette grille de profit n'existe pas",
+		"invalidProfitGridId": "L'identifiant de cette grille de profit n'est pas valide"
+    },
+    "exchangeRate": {
+        "exchangeRateNotFound": "Cette taux d'échange n'existe pas",
+		"invalidExchangeRateId": "L'identifiant de ce taux d'échange n'est pas valide"
+    },
     "unauthorize": {
         "noToken": "Pas de jeton",
         "invalidToken": "Jeton non valide",

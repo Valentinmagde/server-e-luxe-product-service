@@ -371,7 +371,10 @@ class ProductRoutes {
              *              $ref: '#/responses/schemas/500'
              *
              */
-            router.get("/best-sellers", productController.getBestSellersOfMonth);
+            router.get(
+              "/best-sellers",
+              productController.getBestSellersOfMonth
+            );
 
             /**
              * @swagger
@@ -944,6 +947,120 @@ class ProductRoutes {
              *
              */
             router.post("/many", productController.storeMultiple);
+
+            /**
+             * @swagger
+             * /v1/{lang}/products/calculate-price:
+             *   post:
+             *     security:
+             *      - bearerAuth: []
+             *     tags:
+             *     - Product
+             *     operationId: calculatePrice
+             *     summary: Calculate the final price of a product.
+             *     description: Calculate the final price of a product.
+             *     parameters:
+             *      - in: path
+             *        name: lang
+             *        schema:
+             *          type: string
+             *          example: en
+             *        required: true
+             *        description: Language for the response. Supported
+             *          languages ['en', 'fr']
+             *
+             *     requestBody:
+             *       required: true
+             *       content:
+             *         application/json:
+             *           schema:
+             *             type: object
+             *             properties:
+             *               costIds:
+             *                 type: array
+             *                 items:
+             *                   type: string
+             *                 description: Array of cost IDs associated with the product.
+             *               targetCurrency:
+             *                 type: string
+             *                 description: The target currency for the final price (default is "USD").
+             *
+             *     responses:
+             *       200:
+             *         description: Final price calculated successfully.
+             *         content:
+             *           application/json:
+             *             schema:
+             *                type: object
+             *                properties:
+             *                  status:
+             *                    type: string
+             *                    example: Ok
+             *                  data:
+             *                    type: object
+             *                    properties:
+             *                      finalPrice:
+             *                        type: number
+             *                        example: 123.45
+             *                      currency:
+             *                        type: string
+             *                        example: USD
+             *
+             *       400:
+             *         description: Bad Request.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/400'
+             *
+             *       401:
+             *         description: Unauthorized.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/401'
+             *
+             *       412:
+             *         description: Precondition Failed.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/412'
+             *       500:
+             *         description: Internal Server Error.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/500'
+             *
+             */
+            router.post(
+              "/calculate-price",
+              productController.calculateFinalPrice
+            );
+
+            /**
+             * @swagger
+             * /v1/{lang}/products/{productId}:
+             *   put:
+             *     security:
+             *      - bearerAuth: []
+             *     tags:
+             *     - Product
+             *     operationId: update
+             *     summary: Update a product.
+             *     description: Update a product.
+             *     parameters:
+             *      - in: path
+             *        name: lang
+             *        schema:
+             *          type: string
+             *          example: en
+             *        required: true
+             *        description: Language for the response. Supported
+             *          languages ['en', 'fr']
+             *
+             */
 
             /**
              * @swagger

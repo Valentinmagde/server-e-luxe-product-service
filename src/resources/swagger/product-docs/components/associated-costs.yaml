@@ -1,0 +1,42 @@
+components:
+  schemas:
+    AssociatedCost:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: object
+          properties:
+            en:
+              type: string
+            fr:
+              type: string
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: ["EUR", "USD", "GBP"]
+        description:
+          type: object
+          properties:
+            en:
+              type: string
+            fr:
+              type: string
+        amount_type:
+          type: string
+          enum: ["fixed", "percentage"]
+        percentage:
+          type: number
+        status:
+          type: string
+          lowercase: true
+          enum: ["show", "hide"]
+          default: "show"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time

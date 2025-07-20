@@ -11,6 +11,9 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import * as bizSdk from "facebook-nodejs-business-sdk";
 import facebookConfig from "../../../config/facebook";
 import config from "../../../config/environment";
+import associatedCostsService from "../associated-costs/associated-costs.service";
+import profitGridService from "../profit-grid/profit-grid.service";
+import exchangeRateService from "../exchange-rate/exchange-rate.service";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -1022,6 +1025,39 @@ class ProductService {
         }
       })();
     });
+  }
+
+  /**
+   * Calculate the final price of a product based on its associated costs and profit grid.
+   *
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-07-05
+   *
+   * @param {string[]} costIds - Array of cost IDs associated with the product.
+   * @param {string} targetCurrency - The target currency for the final price (default is "USD").
+   * @return {Promise<unknown>} the eventual completion or failure
+   */
+  public async calculateFinalPrice(costIds: string[], targetCurrency = "USD"): Promise<unknown> {
+    // 1. Calcul des coûts totaux
+    const costs: any = await associatedCostsService.getAllByIds(costIds);
+    const totalCostEUR = costs.reduce((sum: number, cost: any) => sum + cost.amount, 0);
+
+    // 2. Calcul du bénéfice
+    const { gross_profit: grossProfit }: any = await profitGridService.calculateProfit(totalCostEUR);
+
+    // 3. Conversion de devise
+    const conversion: any = await exchangeRateService.convert(
+      totalCostEUR + grossProfit,
+      "EUR",
+      targetCurrency
+    );
+
+    return {
+      totalCostEUR,
+      grossProfit,
+      finalPrice: conversion.convertedAmount,
+      conversionDetails: conversion
+    };
   }
 
   /**
