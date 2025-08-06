@@ -60,6 +60,10 @@ const productSchema = new mongoose.Schema(
         type: Number,
         required: false,
       },
+      purchase_cost: {
+        type: Number,
+        required: false,
+      },
     },
     promotional_price: { type: Number, required: false },
     discount: { type: Number, required: false },

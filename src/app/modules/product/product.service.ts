@@ -144,7 +144,7 @@ class ProductService {
           if (name) {
             const matchingCategories = await Category.find(
               {
-                $or: [{ [`name.${lang}`]: { $regex: name, $options: "i" } }],
+                $or: [{ [`name.${lang}`]: { $regex: name.trim(), $options: "i" } }],
               },
               "_id"
             );
@@ -165,17 +165,17 @@ class ProductService {
             ...(name
               ? {
                   $or: [
-                    { [`title.${lang}`]: { $regex: name, $options: "i" } },
+                    { [`title.${lang}`]: { $regex: name.trim(), $options: "i" } },
                     {
-                      [`description.${lang}`]: { $regex: name, $options: "i" },
+                      [`description.${lang}`]: { $regex: name.trim(), $options: "i" },
                     },
                     {
                       [`short_description.${lang}`]: {
-                        $regex: name,
+                        $regex: name.trim(),
                         $options: "i",
                       },
                     },
-                    { name: { $regex: name, $options: "i" } },
+                    { name: { $regex: name.trim(), $options: "i" } },
                   ],
                 }
               : {}),
