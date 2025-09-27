@@ -14,6 +14,7 @@ const categoryShema = new mongoose.Schema(
     show_products_on_homepage: { type: Boolean, default: false },
     status: { type: String, lowercase: true, enum: ['show', 'hide'], default: 'show' },
     products: [{ type: mongoose.Schema.Types.ObjectId, ref: "product" }],
+    position: { type: Number, default: 0 },
   },
   {
     timestamps: {

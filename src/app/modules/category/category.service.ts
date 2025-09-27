@@ -49,7 +49,7 @@ class CategoryService {
       (async () => {
         try {
           const categories: Array<CategoryType> = await Category.find()
-            .sort({ _id: -1 })
+            .sort({ position: 1 })
             .populate("products", "_id name");
 
           const categoryList =
@@ -176,7 +176,7 @@ class CategoryService {
       (async () => {
         try {
           const categories: any = await Category.find({ status: "show" }).sort({
-            _id: -1,
+            position: 1,
           });
 
           const categoryList =
@@ -509,6 +509,66 @@ class CategoryService {
   }
 
   /**
+   * Update positions
+   *
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-09-27
+   *
+   * @param {any} data the categories data
+   * @return {Promise<unknown>} the eventual completion or failure
+   */
+  public async updatePositions(data: any): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      (async () => {
+        try {
+          if (!data || !Array.isArray(data)) {
+            reject("Positions must be an array");
+          }
+
+          if (data.length === 0) {
+            resolve({
+              success: true,
+              updatedCount: 0,
+              totalPositions: 0,
+            });
+          }
+
+          // Vérifier les doublons
+          const uniqueIds = new Set(data.map((p: any) => p.id));
+          if (uniqueIds.size !== data.length) {
+            reject("Duplicate category IDs found");
+          }
+
+          // Vérifier que les positions sont uniques
+          const uniquePositions = new Set(data.map((p: any) => p.position));
+          if (uniquePositions.size !== data.length) {
+            reject("Duplicate positions found");
+          }
+
+          // Bulk operation pour meilleure performance
+          const bulkOperations = data.map((pos: any) => ({
+            updateOne: {
+              filter: { _id: pos.id },
+              update: {
+                $set: {
+                  position: pos.position,
+                  updatedAt: new Date(),
+                },
+              },
+            },
+          }));
+
+          const result = await Category.bulkWrite(bulkOperations);
+
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      })();
+    });
+  }
+
+  /**
    * Delete a category by id
    *
    * @author Valentin Magde <valentinmagde@gmail.com>
@@ -587,7 +647,13 @@ class CategoryService {
       Categories = categories.filter((cat) => cat.parent_id == parentId);
     }
 
-    for (const cate of Categories) {
+    const sortedCategories = Categories.sort((a, b) => {
+      const posA = a.position || 999999; // Fallback pour les positions non définies
+      const posB = b.position || 999999;
+      return posA - posB; // Ordre croissant
+    });
+
+    for (const cate of sortedCategories) {
       categoryList.push({
         _id: cate._id,
         name: cate.name,

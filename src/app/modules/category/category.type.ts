@@ -14,6 +14,7 @@ export default interface CategoryType {
     show_products_on_homepage: boolean;
     status: 'show'|'hide';
     products: Array<ProductType>;
+    position: number;
     children?: Array<CategoryType>;
     product_count: number;
     created_at?: Date;
