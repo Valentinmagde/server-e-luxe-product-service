@@ -793,6 +793,90 @@ class CategoryRoutes {
 
             /**
              * @swagger
+             * /v1/{lang}/categories/positions:
+             *   put:
+             *     security:
+             *      - bearerAuth: []
+             *     tags:
+             *     - Category
+             *     operationId: updatePositions
+             *     summary: Update categories positions.
+             *     description: Update categories positions.
+             *     parameters:
+             *      - in: path
+             *        name: lang
+             *        schema:
+             *          type: string
+             *          example: en
+             *        required: true
+             *        description: Language for the response. Supported
+             *          languages ['en', 'fr']
+             *
+             *     requestBody:
+             *       required: true
+             *       content:
+             *         application/json:
+             *           schema:
+             *             type: array
+             *             items:
+             *               type: object
+             *               properties:
+             *                 id:
+             *                   type: string
+             *                   description: The category's ID.
+             *                 position:
+             *                   type: number
+             *                   description: The category's position.
+             *
+             *     responses:
+             *       200:
+             *         description: Categories positions updated successfully.
+             *         content:
+             *           application/json:
+             *             schema:
+             *                type: object
+             *                properties:
+             *                  status:
+             *                    type: string
+             *                    example: Ok
+             *                  data:
+             *                    type: object
+             *                    properties:
+             *                      success:
+             *                        type: boolean
+             *                        example: true
+             *                      updatedCount:
+             *                        type: number
+             *                        example: 10
+             *                      totalPositions:
+             *                        type: number
+             *                        example: 10
+             *
+             *       400:
+             *         description: Bad Request.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/400'
+             *
+             *       412:
+             *         description: Precondition Failed.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/412'
+             *       500:
+             *         description: Internal Server Error.
+             *         content:
+             *          application/json:
+             *             schema:
+             *              $ref: '#/responses/schemas/500'
+             *
+             */
+            router.put("/positions", categoryController.updatePositions);
+
+            /**
+             * @swagger
              * /v1/{lang}/categories/{categoryIds}/many:
              *   delete:
              *     security:

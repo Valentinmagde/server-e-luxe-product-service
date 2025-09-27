@@ -660,6 +660,49 @@ class CategoryController {
   }
 
   /**
+   * Update positions
+   *
+   * @author Valentin Magde <valentinmagde@gmail.com>
+   * @since 2025-09-27
+   *
+   * @param {Request} req the http request
+   * @param {Response} res the http response
+   *
+   * @return {Promise<void>} the eventual completion or failure
+   */
+  public async updatePositions(req: Request, res: Response): Promise<void> {
+    categoryService
+      .updatePositions(req.body)
+      .then((result) => {
+        if (result === null || result === undefined) {
+          const response = {
+            status: statusCode.httpNotFound,
+            errNo: errorNumbers.resourceNotFound,
+            errMsg: i18n.__("category.categoryNotFound"),
+          };
+
+          return customResponse.error(response, res);
+        } else {
+          const response = {
+            status: statusCode.httpOk,
+            data: result,
+          };
+
+          return customResponse.success(response, res);
+        }
+      })
+      .catch((error) => {
+        const response = {
+          status: error?.status || statusCode.httpInternalServerError,
+          errNo: errorNumbers.genericError,
+          errMsg: error?.message || error,
+        };
+
+        return customResponse.error(response, res);
+      });
+  }
+
+  /**
    * Delete many categories
    *
    * @author Valentin Magde <valentinmagde@gmail.com>
