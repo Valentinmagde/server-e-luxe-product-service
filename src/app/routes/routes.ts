@@ -18,6 +18,7 @@ import extraRoutes from "../modules/extra/extra.routes";
 import associatedCostRoutes from "../modules/associated-costs/associated-costs.routes";
 import profitGridRoutes from "../modules/profit-grid/profit-grid.routes";
 import exchangeRateRoutes from "../modules/exchange-rate/exchange-rate.routes";
+import customizationRoutes from "../modules/customization/customization.routes";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -89,6 +90,9 @@ class Routes {
 
             // Exchange rate routes
             router.use(exchangeRateRoutes.exchangeRateRoutes());
+
+            // Customization routes
+            router.use(customizationRoutes.customizationRoutes());
           })
         );
 

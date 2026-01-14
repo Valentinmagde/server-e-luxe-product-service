@@ -39,6 +39,10 @@
         "exchangeRateNotFound": "Cette taux d'échange n'existe pas",
 		"invalidExchangeRateId": "L'identifiant de ce taux d'échange n'est pas valide"
     },
+    "customization": {
+        "customizationNotFound": "Cette personnalisation n'existe pas",
+		"invalidCustomizationId": "L'identifiant de cette personnalisation n'est pas valide"
+    },
     "unauthorize": {
         "noToken": "Pas de jeton",
         "invalidToken": "Jeton non valide",

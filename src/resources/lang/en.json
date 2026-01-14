@@ -39,6 +39,10 @@
 		"exchangeRateNotFound": "Exchange rate does not exits",
 		"invalidExchangeRateId": "Invalid exchange rate id"
 	},
+	"customization": {
+		"customizationNotFound": "Customization does not exits",
+		"invalidCustomizationId": "Invalid customization id"
+	},
 	"unauthorize": {
 		"noToken": "No token",
 		"invalidToken": "Invalid token",
