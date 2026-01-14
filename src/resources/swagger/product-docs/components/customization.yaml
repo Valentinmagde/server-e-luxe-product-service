@@ -1,0 +1,22 @@
+components:
+  schemas:
+  Customization:
+    type: object
+    properties:
+      _id:
+        type: string
+      name:
+        type: string
+        description: The customer's name.
+      email:
+        type: string
+        description: The customer's email.
+      notes:
+        type: string
+        description: The customization's notes.
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time

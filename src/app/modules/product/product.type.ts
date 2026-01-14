@@ -1,6 +1,3 @@
-import CategoryType from "../category/category.type";
-import TagType from "../tag/tag.type";
-
 export default interface ProductType {
   _id: string;
   product_id: string,
