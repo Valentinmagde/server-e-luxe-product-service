@@ -208,15 +208,22 @@ class CategoryService {
             },
             {
               $lookup: {
-                from: "products", // Name of the Product collection
-                localField: "_id", // Category _id field
-                foreignField: "categories", // Categories field in Product schema
-                as: "products", // The output array field containing matching products
+                from: "products",
+                let: { categoryId: "$_id" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $in: ["$$categoryId", "$categories"] },
+                      status: "show",
+                    },
+                  },
+                ],
+                as: "products",
               },
             },
             {
               $addFields: {
-                productCount: { $size: "$products" }, // Count the number of products
+                productCount: { $size: "$products" },
               },
             },
             {
