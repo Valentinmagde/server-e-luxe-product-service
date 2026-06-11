@@ -466,7 +466,8 @@ class ProductService {
 
           const bestSellers = await Product.find({
             updated_at: { $gte: startDate, $lte: endDate },
-            sales_count: { $gt: 0 }, // Exclure les produits sans ventes
+            sales_count: { $gt: 0 },
+            status: "show",
           })
             .sort({ sales_count: -1 }) // Trier par nombre de ventes décroissant
             .limit(10)
@@ -607,6 +608,7 @@ class ProductService {
             {
               $match: {
                 brand: { $ne: "" },
+                status: "show",
               },
             },
             {
