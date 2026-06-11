@@ -42,25 +42,28 @@ class DBManager {
 
     // Except documentation route for authentication
     if (req.path.indexOf(swaggerBaseUrl) > -1) return next();
-    else {
-      mongoose
-        .connect(
-          `mongodb://${config.mongoDbUser}:${config.mongoDbPassword}@${config.mongoDbHost}:${
-          config.mongoDbPort}/${config.mongoDbName}?authSource=admin`
-        )
-        .then(() => {
-          next();
-        })
-        .catch((error) => {
-          const response = {
-            status: error?.status || statusCode.httpInternalServerError,
-            errNo: errorNumbers.genericError,
-            errMsg: error?.message || error,
-          };
 
-          return customResponse.error(response, res);
-        });
-    }
+    // Already connected — do not re-call connect() to avoid stale-connection buffering
+    if (mongoose.connection.readyState === 1) return next();
+
+    mongoose
+      .connect(
+        `mongodb://${config.mongoDbUser}:${config.mongoDbPassword}@${config.mongoDbHost}:${
+        config.mongoDbPort}/${config.mongoDbName}?authSource=admin`,
+        { serverSelectionTimeoutMS: 5000 }
+      )
+      .then(() => {
+        next();
+      })
+      .catch((error) => {
+        const response = {
+          status: error?.status || statusCode.httpInternalServerError,
+          errNo: errorNumbers.genericError,
+          errMsg: error?.message || error,
+        };
+
+        return customResponse.error(response, res);
+      });
   }
 
   /**

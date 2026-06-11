@@ -11,9 +11,20 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import * as bizSdk from "facebook-nodejs-business-sdk";
 import facebookConfig from "../../../config/facebook";
 import config from "../../../config/environment";
+import facebookCatalog from "../luxury-distribution/facebook-catalog.service";
 import associatedCostsService from "../associated-costs/associated-costs.service";
 import profitGridService from "../profit-grid/profit-grid.service";
 import exchangeRateService from "../exchange-rate/exchange-rate.service";
+
+const VALID_LANGS = new Set(languageCodes);
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function safeLang(lang: string): string {
+  return VALID_LANGS.has(lang) ? lang : "en";
+}
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -36,11 +47,12 @@ class ProductService {
     return new Promise((resolve, reject) => {
       (async () => {
         try {
-          const lang = req.params.lang as string;
+          const lang = safeLang(req.params.lang as string);
           const page: number = Number(req.query.page) || 1;
           const pageSize: number = Number(req.query.perPage) || 12;
 
-          const name: string = (req.query.name as string) || "";
+          const nameRaw: string = (req.query.name as string) || "";
+          const name: string = escapeRegex(nameRaw);
           const startDateParam = (req.query.startDate as string) || "";
           const endDateParam = (req.query.endDate as string) || "";
           const user: string = (req.query.user as string) || "";
@@ -96,12 +108,12 @@ class ProductService {
                   $or: [
                     {
                       "variants.name.en": {
-                        $in: colors.map((c) => new RegExp(`^${c}$`, "i")),
+                        $in: colors.map((c) => new RegExp(`^${escapeRegex(c)}$`, "i")),
                       },
                     },
                     {
                       "variants.name.fr": {
-                        $in: colors.map((c) => new RegExp(`^${c}$`, "i")),
+                        $in: colors.map((c) => new RegExp(`^${escapeRegex(c)}$`, "i")),
                       },
                     },
                   ],
@@ -126,12 +138,14 @@ class ProductService {
               .map((variant) => variant._id?.toString())
           );
 
-          // Recherche des tags liés au nom saisi
+          // Recherche des tags liés au nom saisi (toutes les langues)
           let tagIdsFromSearch: string[] = [];
           if (name) {
             const matchingTags = await Tag.find(
               {
-                $or: [{ [`name.${lang}`]: { $regex: name, $options: "i" } }],
+                $or: languageCodes.map((l) => ({
+                  [`name.${l}`]: { $regex: name, $options: "i" },
+                })),
               },
               "_id"
             );
@@ -139,12 +153,14 @@ class ProductService {
             tagIdsFromSearch = matchingTags.map((tag) => tag._id.toString());
           }
 
-          // Recherche des catégories liées au nom saisi
+          // Recherche des catégories liées au nom saisi (toutes les langues)
           let categoryIdsFromSearch: string[] = [];
           if (name) {
             const matchingCategories = await Category.find(
               {
-                $or: [{ [`name.${lang}`]: { $regex: name.trim(), $options: "i" } }],
+                $or: languageCodes.map((l) => ({
+                  [`name.${l}`]: { $regex: name.trim(), $options: "i" },
+                })),
               },
               "_id"
             );
@@ -165,16 +181,11 @@ class ProductService {
             ...(name
               ? {
                   $or: [
-                    { [`title.${lang}`]: { $regex: name.trim(), $options: "i" } },
-                    {
-                      [`description.${lang}`]: { $regex: name.trim(), $options: "i" },
-                    },
-                    {
-                      [`short_description.${lang}`]: {
-                        $regex: name.trim(),
-                        $options: "i",
-                      },
-                    },
+                    ...languageCodes.flatMap((l) => [
+                      { [`title.${l}`]: { $regex: name.trim(), $options: "i" } },
+                      { [`description.${l}`]: { $regex: name.trim(), $options: "i" } },
+                      { [`short_description.${l}`]: { $regex: name.trim(), $options: "i" } },
+                    ]),
                     { name: { $regex: name.trim(), $options: "i" } },
                   ],
                 }
@@ -207,11 +218,18 @@ class ProductService {
               ? {
                   variants: {
                     $elemMatch: {
-                      // Filtrage des variantes qui ont une couleur correspondante
-                      // Vous devrez probablement faire en sorte que la clé dynamique soit trouvée
-                      $or: colorAttributeKeys.map((colorKey) => ({
-                        [colorKey.toString()]: { $in: variantIds },
-                      })),
+                      $or: [
+                        // Produits normaux : couleur via attribut TextColor
+                        ...colorAttributeKeys.map((colorKey) => ({
+                          [colorKey.toString()]: { $in: variantIds },
+                        })),
+                        // Produits LD : couleur brute dans ld_color
+                        {
+                          ld_color: {
+                            $in: colors.map((c) => new RegExp(`^${escapeRegex(c)}$`, "i")),
+                          },
+                        },
+                      ],
                     },
                   },
                 }
@@ -490,14 +508,15 @@ class ProductService {
           }
 
           if (title) {
+            const safeTitle = escapeRegex(title);
             const titleQueries = languageCodes.map((lang) => ({
-              [`title.${lang}`]: { $regex: `${title}`, $options: "i" },
+              [`title.${lang}`]: { $regex: safeTitle, $options: "i" },
             }));
 
             queryObject.$or = titleQueries;
           }
           if (slug) {
-            queryObject.slug = { $regex: slug, $options: "i" };
+            queryObject.slug = { $regex: escapeRegex(slug), $options: "i" };
           }
 
           let products: any = [];
@@ -1190,14 +1209,23 @@ class ProductService {
           const product = await Product.findById(productId);
 
           if (product) {
+            const PROTECTED = /^\/((_id|__v|source|external_id)(\/|$))/;
+            const safePatch = (data as jsonpatch.Operation[]).filter(
+              (op) => !PROTECTED.test(op.path)
+            );
             const updateObject = jsonpatch.applyPatch(
               product.toObject(),
-              data,
+              safePatch,
               false,
               true
             ).newDocument;
 
             await Product.updateOne({ _id: productId }, { $set: updateObject });
+
+            if (config.env === "production") {
+              this.syncProductToFacebook({ ...updateObject, _id: productId } as any)
+                .catch((err) => console.error("[FacebookCatalog] patch:", err));
+            }
 
             resolve(updateObject);
           } else {
@@ -1228,6 +1256,11 @@ class ProductService {
           if (product) {
             const deleteProduct = await product.deleteOne();
 
+            if (config.env === "production" && product.sku) {
+              facebookCatalog.delete(product.sku)
+                .catch((err) => console.error("[FacebookCatalog] delete:", err));
+            }
+
             resolve(deleteProduct);
           } else {
             resolve(product);
@@ -1252,9 +1285,23 @@ class ProductService {
     return new Promise((resolve, reject) => {
       (async () => {
         try {
+          let skus: string[] = [];
+          if (config.env === "production") {
+            const docs = await Product.find(
+              { _id: { $in: productIds } },
+              { sku: 1 }
+            ).lean() as any[];
+            skus = docs.map((d) => d.sku).filter(Boolean);
+          }
+
           const deleteProducts = await Product.deleteMany({
             _id: { $in: productIds },
           });
+
+          if (skus.length > 0) {
+            Promise.all(skus.map((sku) => facebookCatalog.delete(sku)))
+              .catch((err) => console.error("[FacebookCatalog] deleteMany:", err));
+          }
 
           resolve(deleteProducts);
         } catch (error) {
@@ -1293,6 +1340,7 @@ class ProductService {
   private async syncProductToFacebook(product: {
     sku: string;
     current_stock: number;
+    status?: string;
     description: {
       en: string;
       fr: string;
@@ -1321,7 +1369,7 @@ class ProductService {
           const productData = {
             // id: product?.sku.toString() || product?._id.toString(),
             retailer_id: product?.sku.toString(),
-            availability: product?.current_stock ? "in stock" : "out of stock",
+            availability: product?.current_stock > 0 && product?.status !== "hide" ? "in stock" : "out of stock",
             condition: "new",
             description: (
               product?.description?.en || product?.description?.fr
@@ -1469,6 +1517,20 @@ class ProductService {
    * @param {string} order - The sorting option requested.
    * @returns {Object} MongoDB sort object
    */
+  /**
+   * Returns all distinct ld_color values from LD product variants (status: show)
+   */
+  public async getLdColors(): Promise<string[]> {
+    const result = await Product.aggregate([
+      { $match: { source: "luxury_distribution", status: "show" } },
+      { $unwind: "$variants" },
+      { $match: { "variants.ld_color": { $exists: true, $ne: "" } } },
+      { $group: { _id: "$variants.ld_color" } },
+      { $sort: { _id: 1 } },
+    ]);
+    return result.map((r) => r._id as string);
+  }
+
   private getSortOrder(order: string): any {
     switch (order) {
       case "newest":

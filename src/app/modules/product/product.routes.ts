@@ -283,6 +283,7 @@ class ProductRoutes {
              *
              */
             router.get("/showing", productController.getShowingProducts);
+            router.get("/ld-colors", productController.getLdColors);
 
             /**
              * @swagger

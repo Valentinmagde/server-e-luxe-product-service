@@ -19,6 +19,7 @@ import associatedCostRoutes from "../modules/associated-costs/associated-costs.r
 import profitGridRoutes from "../modules/profit-grid/profit-grid.routes";
 import exchangeRateRoutes from "../modules/exchange-rate/exchange-rate.routes";
 import customizationRoutes from "../modules/customization/customization.routes";
+import luxuryDistributionRoutes from "../modules/luxury-distribution/luxury-distribution.routes";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -93,6 +94,9 @@ class Routes {
 
             // Customization routes
             router.use(customizationRoutes.customizationRoutes());
+
+            // Luxury Distribution integration routes
+            router.use(luxuryDistributionRoutes.luxuryDistributionRoutes());
           })
         );
 

@@ -2,6 +2,8 @@
 /* eslint-disable no-console */
 import bodyParser from "body-parser";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import ExpressConfigModule from "./express";
 import { Application } from "express";
 import DBManager from "./db";
@@ -54,18 +56,34 @@ class AppConfig {
    * @return {void}
    */
   public loadAppLevelConfig(): void {
-    this.app.use(bodyParser.json({ limit: "50mb" }));
-    this.app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+    const allowedOrigins = [config.webClientUrl, config.webBackofficeUrl, config.apiGatewayUrl];
+    const corsOptions: cors.CorsOptions = {
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const isLocalhost = /^http:\/\/localhost(:\d+)?$/.test(origin);
+        if (isLocalhost || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Origin ${origin} not allowed`));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    };
+    this.app.options('*', cors(corsOptions));
+    this.app.use(cors(corsOptions));
+    this.app.use(helmet());
     this.app.use(
-      cors({
-        origin: [
-          config.webClientUrl,
-          config.webBackofficeUrl,
-          config.apiGatewayUrl,
-        ],
-        credentials: true,
+      rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 200,
+        standardHeaders: true,
+        legacyHeaders: false,
       })
     );
+    this.app.use(bodyParser.json({ limit: "50mb" }));
+    this.app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
   }
 
   /**
