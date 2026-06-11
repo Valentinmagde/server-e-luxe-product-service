@@ -3,7 +3,6 @@
 import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import ExpressConfigModule from "./express";
 import { Application } from "express";
 import DBManager from "./db";
@@ -74,14 +73,6 @@ class AppConfig {
     this.app.options('*', cors(corsOptions));
     this.app.use(cors(corsOptions));
     this.app.use(helmet());
-    this.app.use(
-      rateLimit({
-        windowMs: 15 * 60 * 1000,
-        max: 1000,
-        standardHeaders: true,
-        legacyHeaders: false,
-      })
-    );
     this.app.use(bodyParser.json({ limit: "50mb" }));
     this.app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
   }
