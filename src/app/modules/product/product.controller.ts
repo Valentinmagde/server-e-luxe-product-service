@@ -96,6 +96,22 @@ class ProductController {
   }
 
   /**
+   * Get all distinct ld_color values from LD product variants
+   */
+  public async getLdColors(req: Request, res: Response): Promise<void> {
+    try {
+      const colors = await productService.getLdColors();
+      return customResponse.success({ status: statusCode.httpOk, data: colors }, res);
+    } catch (error: any) {
+      return customResponse.error({
+        status: error?.status || statusCode.httpInternalServerError,
+        errNo: errorNumbers.genericError,
+        errMsg: error?.message || error,
+      }, res);
+    }
+  }
+
+  /**
    * Get Best Sellers Of Month.
    *
    * @author Valentin Magde <valentinmagde@gmail.com>

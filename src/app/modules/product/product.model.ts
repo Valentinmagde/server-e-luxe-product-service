@@ -116,6 +116,14 @@ const productSchema = new mongoose.Schema(
     shipping: shippingSchema,
     translations: { type: Object, required: false },
     user: { type: mongoose.Schema.Types.ObjectId, required: false },
+    source: {
+      type: String,
+      enum: ["manual", "luxury_distribution"],
+      default: "manual",
+    },
+    external_id: { type: String, index: true },
+    external_sku: { type: String },
+    last_synced_at: { type: Date },
   },
   {
     timestamps: {
@@ -124,6 +132,15 @@ const productSchema = new mongoose.Schema(
     },
   }
 );
+
+productSchema.index({ slug: 1 }, { unique: true });
+productSchema.index({ category: 1 });
+productSchema.index({ categories: 1 });
+productSchema.index({ status: 1 });
+productSchema.index({ featured: 1 });
+productSchema.index({ promotional: 1 });
+productSchema.index({ sales_count: -1 });
+productSchema.index({ status: 1, categories: 1 });
 
 const Product = mongoose.model("product", productSchema);
 

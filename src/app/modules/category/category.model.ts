@@ -24,6 +24,10 @@ const categoryShema = new mongoose.Schema(
   }
 );
 
+categoryShema.index({ slug: 1 }, { unique: true, sparse: true });
+categoryShema.index({ status: 1 });
+categoryShema.index({ is_top_category: 1 });
+
 const Category = mongoose.model("category", categoryShema);
 
 export default Category;

@@ -7,6 +7,7 @@ import statusCode from "./src/app/utils/status-code.util";
 import errorNumbers from "./src/app/utils/error-numbers.util";
 import config from "./src/config/environment";
 import AppConfig from "./src/core/app";
+import DBManager from "./src/core/db";
 import Subscribes from "./src/app/subscribes/subscribes";
 
 /**
@@ -76,6 +77,19 @@ class Server {
    * @returns {void}
    */
   public startTheServer(): void {
+    new DBManager()
+      .asyncOnConnect()
+      .then(() => {
+        console.log("MongoDB connected");
+        this._boot();
+      })
+      .catch((err) => {
+        console.error("Failed to connect to MongoDB:", err?.message || err);
+        process.exit(1);
+      });
+  }
+
+  private _boot(): void {
     this.appConfig();
     this.includeRoutes();
     this.includeSubscribes();
