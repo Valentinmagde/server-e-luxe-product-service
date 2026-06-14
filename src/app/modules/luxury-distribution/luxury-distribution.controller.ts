@@ -3,6 +3,7 @@ import customResponse from "../../utils/custom-response.util";
 import statusCode from "../../utils/status-code.util";
 import errorNumbers from "../../utils/error-numbers.util";
 import luxuryDistributionService from "./luxury-distribution.service";
+import { getSyncCronState, runSyncNow } from "./ld-sync.cron";
 
 class LuxuryDistributionController {
   constructor() {
@@ -341,6 +342,20 @@ class LuxuryDistributionController {
     } catch (error) {
       this.handleError(error, res);
     }
+  }
+
+  public async getCronStatus(_req: Request, res: Response): Promise<void> {
+    customResponse.success({ status: statusCode.httpOk, data: [getSyncCronState()] }, res);
+  }
+
+  public async runCronNow(req: Request, res: Response): Promise<void> {
+    const { cronId } = req.params;
+    if (cronId !== "ld-sync") {
+      customResponse.error({ status: statusCode.httpNotFound, errNo: errorNumbers.resourceNotFound, errMsg: "Unknown cron" }, res);
+      return;
+    }
+    runSyncNow().catch((err) => console.error("[CronController] runSyncNow error:", err));
+    customResponse.success({ status: statusCode.httpOk, data: { message: "Cron triggered" } }, res);
   }
 
   private handleError(error: any, res: Response): void {

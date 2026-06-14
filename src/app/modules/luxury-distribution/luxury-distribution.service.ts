@@ -210,8 +210,18 @@ class LuxuryDistributionService {
     this.assertMappingsComplete(await this.computeUnmapped(ld));
 
     const retailPrice = parseFloat(ld.original_price) || 0;
+    const existing = await Product.findOne(
+      { source: "luxury_distribution", external_id: stockId },
+      { "prices.discount": 1, variants: 1 }
+    ).lean() as any;
+
+    const existingDiscount = Number(existing?.prices?.discount || 0);
+    const newPrice = existingDiscount > 0
+      ? retailPrice * (1 - existingDiscount / 100)
+      : retailPrice;
+
     const [variants, tags] = await Promise.all([
-      this.buildVariants(ld),
+      this.buildVariants(ld, existing?.variants || []),
       this.buildTags(ld),
     ]);
 
@@ -219,7 +229,7 @@ class LuxuryDistributionService {
       { source: "luxury_distribution", external_id: stockId },
       {
         "prices.original_price": retailPrice,
-        "prices.price": retailPrice,
+        "prices.price": newPrice,
         "prices.purchase_cost": ld.selling_price || 0,
         current_stock: ld.qty || 0,
         status: (ld.qty || 0) > 0 ? "show" : "hide",
@@ -378,7 +388,7 @@ class LuxuryDistributionService {
     return ids;
   }
 
-  private async buildVariants(ld: any): Promise<any[]> {
+  private async buildVariants(ld: any, existingVariants: any[] = []): Promise<any[]> {
     const attributeMappings = await LdAttributeMapping.find().lean() as any[];
     const mappingByLdValue = new Map<string, { attrId: string; variantId: string }>(
       attributeMappings.map((m) => [
@@ -407,6 +417,14 @@ class LuxuryDistributionService {
       const ldAttributeValues: Record<string, string> = {};
       if (sizeMapping) ldAttributeValues[sizeMapping.attrId] = size;
 
+      const existingVariant = existingVariants.find(
+        (v: any) => v.ld_size === size || v.sku === `LD-${ld.sku}-${size}`
+      );
+      const existingDiscount = Number(existingVariant?.discount || 0);
+      const variantPrice = existingDiscount > 0
+        ? retailPrice * (1 - existingDiscount / 100)
+        : retailPrice;
+
       return {
         ...attrPart,
         ld_size: size,
@@ -415,12 +433,18 @@ class LuxuryDistributionService {
         ...(!sizeMapping && { size }),
         quantity,
         original_price: retailPrice,
-        price: retailPrice,
+        price: variantPrice,
+        discount: existingDiscount,
         purchase_cost: purchaseCost,
         sku: `LD-${ld.sku}-${size}`,
         product_id: `LD-${ld.id}-${i}`,
         ld_stock_id: String(ld.id),
         ld_variant_ref: ld.variant || undefined,
+        ...(existingVariant?.promotional !== undefined && {
+          promotional: existingVariant.promotional,
+          date_from_promo: existingVariant.date_from_promo,
+          date_to_promo: existingVariant.date_to_promo,
+        }),
       };
     });
   }
