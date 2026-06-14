@@ -20,6 +20,7 @@ import profitGridRoutes from "../modules/profit-grid/profit-grid.routes";
 import exchangeRateRoutes from "../modules/exchange-rate/exchange-rate.routes";
 import customizationRoutes from "../modules/customization/customization.routes";
 import luxuryDistributionRoutes from "../modules/luxury-distribution/luxury-distribution.routes";
+import dynamicCronRoutes from "../modules/dynamic-cron/dynamic-cron.routes";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -97,6 +98,9 @@ class Routes {
 
             // Luxury Distribution integration routes
             router.use(luxuryDistributionRoutes.luxuryDistributionRoutes());
+
+            // Dynamic cron routes
+            router.use(dynamicCronRoutes.dynamicCronRoutes());
           })
         );
 

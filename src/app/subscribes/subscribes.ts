@@ -1,4 +1,6 @@
 import productSubscribe from "../modules/product/product.subscribe";
+import { startLdSyncCron } from "../modules/luxury-distribution/ld-sync.cron";
+import { startDynamicCrons } from "../modules/dynamic-cron/dynamic-cron.service";
 
 /**
  * @author Valentin Magde <valentinmagde@gmail.com>
@@ -19,6 +21,8 @@ class Subscribes {
   public appSubscribes(): void {
     // Includes all subscribes
     productSubscribe.updateProductStock();
+    startLdSyncCron();
+    startDynamicCrons();
   }
 
   /**

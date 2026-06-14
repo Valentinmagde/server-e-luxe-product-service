@@ -160,6 +160,16 @@ class LuxuryDistributionRoutes {
                 luxuryDistributionController
               )
             );
+
+            // Cron status and manual trigger
+            router.get(
+              "/crons",
+              luxuryDistributionController.getCronStatus.bind(luxuryDistributionController)
+            );
+            router.post(
+              "/crons/:cronId/run",
+              luxuryDistributionController.runCronNow.bind(luxuryDistributionController)
+            );
           })
         );
       })
