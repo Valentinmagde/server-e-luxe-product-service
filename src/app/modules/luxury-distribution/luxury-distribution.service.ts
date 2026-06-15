@@ -16,6 +16,9 @@ let cachedToken: string | null = null;
 let tokenExpiry: number | null = null;
 
 const LD_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const LD_PRODUCTS_SCAN_TTL_MS = 5 * 60 * 1000; // 5 minutes — court pour rester à jour
+
+let allLdProductsCache: { data: any[]; cachedAt: number } | null = null;
 
 class LuxuryDistributionService {
   private async getToken(): Promise<string> {
@@ -47,27 +50,62 @@ class LuxuryDistributionService {
     return cachedToken!;
   }
 
+  private async getAllLdProductsCached(force = false): Promise<any[]> {
+    if (!force && allLdProductsCache && Date.now() - allLdProductsCache.cachedAt < LD_PRODUCTS_SCAN_TTL_MS) {
+      return allLdProductsCache.data;
+    }
+    const token = await this.getToken();
+    const pageSize = 200;
+    const firstRes = await fetch(`${LD_API_URL}/v2/stocks?offset=0&limit=${pageSize}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!firstRes.ok) throw Object.assign(new Error("Failed to fetch products from Luxury Distribution"), { status: 502 });
+    const firstData = await firstRes.json() as any;
+    const ldTotal: number = firstData.data?.total || 0;
+    const all: any[] = [...(firstData.data?.data || [])];
+    if (ldTotal > pageSize) {
+      const pages = Math.ceil((ldTotal - pageSize) / pageSize);
+      const rest = await Promise.all(
+        Array.from({ length: pages }, (_, i) =>
+          fetch(`${LD_API_URL}/v2/stocks?offset=${(i + 1) * pageSize}&limit=${pageSize}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+            .then((r) => r.json() as Promise<any>)
+            .then((d: any) => d.data?.data || [])
+        )
+      );
+      for (const page of rest) all.push(...page);
+    }
+    allLdProductsCache = { data: all, cachedAt: Date.now() };
+    return all;
+  }
+
   /**
    * Browse Luxury Distribution catalog, enriched with imported flag.
    */
-  public async browse(offset: number, limit: number, search?: string) {
-    const token = await this.getToken();
+  public async browse(offset: number, limit: number, search?: string, category?: string) {
+    const pageSize = 200;
 
-    const url = `${LD_API_URL}/v2/stocks?offset=${offset}&limit=${limit}`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    let allProducts: any[] = [];
+    let total: number;
 
-    if (!res.ok) {
-      throw Object.assign(
-        new Error("Failed to fetch products from Luxury Distribution"),
-        { status: 502 }
-      );
+    if (category) {
+      const cached = await this.getAllLdProductsCached();
+      allProducts = cached.filter((p: any) => p.category_string === category);
+      total = allProducts.length;
+      allProducts = allProducts.slice(offset, offset + limit);
+    } else {
+      const token = await this.getToken();
+      const res = await fetch(`${LD_API_URL}/v2/stocks?offset=${offset}&limit=${limit}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw Object.assign(new Error("Failed to fetch products from Luxury Distribution"), { status: 502 });
+      const data = await res.json() as any;
+      allProducts = data.data?.data || [];
+      total = data.data?.total || 0;
     }
 
-    const data = await res.json() as any;
-    let products: any[] = data.data?.data || [];
-    const total: number = data.data?.total || 0;
+    let products = allProducts;
 
     if (search) {
       const q = search.toLowerCase();
@@ -114,7 +152,7 @@ class LuxuryDistributionService {
           has_unmapped_tags,
         };
       }),
-      total: search ? products.length : total,
+      total,
       offset,
       limit,
     };
@@ -613,6 +651,26 @@ class LuxuryDistributionService {
     const result = { sizes: sort(sizeSet), colors: sort(colorSet) };
     await LdScanCache.findOneAndUpdate(
       { key: "attribute_values" },
+      { data: result, cached_at: new Date() },
+      { upsert: true }
+    );
+    return result;
+  }
+
+  public async getProductCategoryStrings(force = false): Promise<string[]> {
+    if (!force) {
+      const cached = await LdScanCache.findOne({ key: "product_category_strings" }).lean() as any;
+      if (cached && Date.now() - new Date(cached.cached_at).getTime() < LD_CACHE_TTL_MS) {
+        return cached.data;
+      }
+    }
+
+    const all = await this.getAllLdProductsCached(force);
+    const result = [...new Set(all.map((p: any) => p.category_string).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+    await LdScanCache.findOneAndUpdate(
+      { key: "product_category_strings" },
       { data: result, cached_at: new Date() },
       { upsert: true }
     );
