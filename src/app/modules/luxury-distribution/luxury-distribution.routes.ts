@@ -55,6 +55,14 @@ class LuxuryDistributionRoutes {
               )
             );
 
+            // All unique category_string values from all LD products (cached)
+            router.get(
+              "/product-category-strings",
+              luxuryDistributionController.getProductCategoryStrings.bind(
+                luxuryDistributionController
+              )
+            );
+
             // All unique attribute values from LD API (sizes + colors)
             router.get(
               "/ld-attribute-values",

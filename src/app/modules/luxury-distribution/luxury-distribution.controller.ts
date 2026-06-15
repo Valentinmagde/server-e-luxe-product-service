@@ -19,11 +19,13 @@ class LuxuryDistributionController {
       const offset = parseInt(req.query.offset as string) || 0;
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
       const search = (req.query.search as string) || undefined;
+      const category = (req.query.category as string) || undefined;
 
       const result = await luxuryDistributionService.browse(
         offset,
         limit,
-        search
+        search,
+        category
       );
       customResponse.success({ status: statusCode.httpOk, data: result }, res);
     } catch (error) {
@@ -105,6 +107,20 @@ class LuxuryDistributionController {
     try {
       const categories = await luxuryDistributionService.getLdCategories();
       customResponse.success({ status: statusCode.httpOk, data: categories }, res);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
+   * Get all unique category_string values from all LD products.
+   * GET /luxury-distribution/product-category-strings
+   */
+  public async getProductCategoryStrings(req: Request, res: Response): Promise<void> {
+    try {
+      const force = req.query.force === "true";
+      const result = await luxuryDistributionService.getProductCategoryStrings(force);
+      customResponse.success({ status: statusCode.httpOk, data: result }, res);
     } catch (error) {
       this.handleError(error, res);
     }
