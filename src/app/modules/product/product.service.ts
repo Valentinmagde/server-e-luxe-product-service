@@ -58,6 +58,10 @@ class ProductService {
           const user: string = (req.query.user as string) || "";
           const featured: string = (req.query.featured as string) || "";
           const promotional: string = (req.query.promotional as string) || "";
+          // Variant-level promo dates are stored as raw "YYYY-MM-DD" strings
+          // (variants[] has no Mongoose schema/casting), unlike the root-level
+          // Date fields — compare against a same-format string for $elemMatch.
+          const todayStr = new Date().toISOString().slice(0, 10);
           const status: string = (req.query.status as string) || "";
           const categories: string[] = req.query.categories
             ? (req.query.categories as string[])
@@ -191,7 +195,26 @@ class ProductService {
                 }
               : {}),
             ...(featured ? { featured: { $gte: featured } } : {}),
-            ...(promotional ? { promotional: { $gte: promotional } } : {}),
+            ...(promotional === "true"
+              ? {
+                  $or: [
+                    {
+                      promotional: true,
+                      date_from_promo: { $lte: new Date() },
+                      date_to_promo: { $gte: new Date() },
+                    },
+                    {
+                      variants: {
+                        $elemMatch: {
+                          promotional: true,
+                          date_from_promo: { $lte: todayStr },
+                          date_to_promo: { $gte: todayStr },
+                        },
+                      },
+                    },
+                  ],
+                }
+              : {}),
             ...(min || max
               ? {
                   "prices.original_price": {
