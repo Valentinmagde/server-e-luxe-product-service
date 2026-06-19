@@ -512,7 +512,12 @@ class LuxuryDistributionService {
 
     this.assertMappingsComplete(await this.computeUnmapped(ld));
 
-    const variants = await this.buildVariants(ld);
+    const existing = await Product.findOne(
+      { source: "luxury_distribution", external_id: stockId },
+      { variants: 1 }
+    ).lean() as any;
+
+    const variants = await this.buildVariants(ld, existing?.variants || []);
     const tags = await this.buildTags(ld);
     const updated = await Product.findOneAndUpdate(
       { source: "luxury_distribution", external_id: stockId },

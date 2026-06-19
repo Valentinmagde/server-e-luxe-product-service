@@ -1486,24 +1486,27 @@ class ProductService {
           grouped[keyValue] = { [idKey]: keyValue };
         }
 
+        // Quand plusieurs variants partagent la même valeur d'attribut (ex: même
+        // taille, couleurs différentes), le variant en promotion doit prévaloir
+        // sur les autres pour les champs scalaires (prix, promo, dates, etc.),
+        // sinon la promo d'un variant non traité en premier est silencieusement perdue.
+        const isPromoVariant = !!variant.promotional;
+        const groupAlreadyPromo = !!grouped[keyValue].promotional;
+
         Object.keys(variant).forEach((key) => {
           if (key === idKey) return;
 
           const val = variant[key];
           if (val === undefined) return;
 
-          if (!grouped[keyValue][key]) {
-            if (key.length === 24) {
+          if (key.length === 24) {
+            if (!grouped[keyValue][key]) {
               grouped[keyValue][key] = [val];
-            } else {
-              grouped[keyValue][key] = val;
+            } else if (!grouped[keyValue][key].includes(val)) {
+              grouped[keyValue][key].push(val);
             }
-          } else {
-            if (key.length === 24) {
-              if (!grouped[keyValue][key].includes(val)) {
-                grouped[keyValue][key].push(val);
-              }
-            }
+          } else if (!grouped[keyValue][key] || (isPromoVariant && !groupAlreadyPromo)) {
+            grouped[keyValue][key] = val;
           }
         });
       });
