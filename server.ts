@@ -77,22 +77,8 @@ class Server {
    * @returns {void}
    */
   public startTheServer(): void {
-    new DBManager()
-      .asyncOnConnect()
-      .then(() => {
-        console.log("MongoDB connected");
-        this._boot();
-      })
-      .catch((err) => {
-        console.error("Failed to connect to MongoDB:", err?.message || err);
-        process.exit(1);
-      });
-  }
-
-  private _boot(): void {
     this.appConfig();
     this.includeRoutes();
-    this.includeSubscribes();
 
     // Default error-handling middleware
     this.app.use(
@@ -116,6 +102,13 @@ class Server {
 
     this.http.listen(port, host, () => {
       console.log(`Listening on http://${host}:${port}`);
+    });
+
+    // Connect to MongoDB (retries with backoff, never gives up) before
+    // starting crons/subscribes — the HTTP server is already up regardless.
+    new DBManager().asyncOnConnect().then(() => {
+      console.log("[Server] MongoDB connected — starting background jobs");
+      this.includeSubscribes();
     });
   }
 }
