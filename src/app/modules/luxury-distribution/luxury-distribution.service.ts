@@ -18,9 +18,20 @@ let tokenExpiry: number | null = null;
 const LD_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const LD_PRODUCTS_SCAN_TTL_MS = 5 * 60 * 1000; // 5 minutes — court pour rester à jour
 
+// Marge appliquée au prix d'origine LD lors de l'import/sync vers e-luxe
+const LD_PRICE_MARKUP_RATE = 0.05;
+
 let allLdProductsCache: { data: any[]; cachedAt: number } | null = null;
 
 class LuxuryDistributionService {
+  /**
+   * Converts LD's original_price into the e-luxe retail price, applying
+   * the markup (import + sync, so it never reverts to the raw LD price).
+   */
+  private getRetailPrice(ld: any): number {
+    return (parseFloat(ld.original_price) || 0) * (1 + LD_PRICE_MARKUP_RATE);
+  }
+
   private async getToken(): Promise<string> {
     if (cachedToken && tokenExpiry && Date.now() < tokenExpiry) {
       return cachedToken;
@@ -247,7 +258,7 @@ class LuxuryDistributionService {
 
     this.assertMappingsComplete(await this.computeUnmapped(ld));
 
-    const retailPrice = parseFloat(ld.original_price) || 0;
+    const retailPrice = this.getRetailPrice(ld);
     const existing = await Product.findOne(
       { source: "luxury_distribution", external_id: stockId },
       { "prices.discount": 1, variants: 1 }
@@ -435,7 +446,7 @@ class LuxuryDistributionService {
       ])
     );
 
-    const retailPrice = parseFloat(ld.original_price) || 0;
+    const retailPrice = this.getRetailPrice(ld);
     const purchaseCost = parseFloat(ld.selling_price) || 0;
 
     const sizeEntries: { size: string; quantity: number }[] = (ld.size_quantity || []).map(
@@ -791,7 +802,7 @@ class LuxuryDistributionService {
       this.buildVariants(ld),
       this.buildTags(ld),
     ]);
-    const retailPrice = parseFloat(ld.original_price) || 0;
+    const retailPrice = this.getRetailPrice(ld);
     const purchaseCost = parseFloat(ld.selling_price) || 0;
 
     const rawDesc = (ld.description || "").trim();
